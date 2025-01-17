@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
+print("yelllooooowwww")
 st.set_page_config(
     page_title="GPT-4o Mini Prompt Refinement Experiment", 
     layout="wide"
