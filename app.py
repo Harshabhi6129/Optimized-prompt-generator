@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 import logging
+from PIL import Image
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -41,9 +42,19 @@ else:
     logger.warning("Google Generative AI key not found.")
     st.warning("Google Generative AI key not found. Please set it in the environment.")
 
+def load_gemini_pro(model_name: str) -> genai.GenerativeModel:
+    """Returns the Gemini Pro Generative model."""
+    try:
+        model = genai.GenerativeModel(model_name=model_name)
+        return model
+    except Exception as e:
+        logger.error(f"Error loading Gemini Pro model {model_name}: {e}")
+        st.error(f"Error loading Gemini Pro model: {e}")
+        return None
+
 def refine_prompt_with_google_genai(naive_prompt: str) -> str:
     """
-    Use Google Generative AI (text-bison-001) to refine the naive prompt into a detailed and well-structured prompt.
+    Use Google Generative AI to refine the naive prompt into a detailed and well-structured prompt.
     """
     try:
         refinement_instruction = (
@@ -53,16 +64,14 @@ def refine_prompt_with_google_genai(naive_prompt: str) -> str:
         )
         full_prompt = f"{refinement_instruction}\n\nNaive Prompt: {naive_prompt}"
 
-        # Use a valid Google Generative AI model
-        response = genai.generate_text(prompt=full_prompt, model="models/text-bison-001")
-        refined_text = response.result.strip()
+        model = load_gemini_pro("gemini-1.5-flash")
+        if not model:
+            raise Exception("Gemini Pro model not loaded successfully.")
+
+        response = model.generate_content(full_prompt)
+        refined_text = response.text.strip()
         logger.info("Prompt refined successfully with Google Generative AI.")
         return refined_text
-
-    except AttributeError as e:
-        logger.error(f"Google Generative AI AttributeError: {e}")
-        st.error("The Google Generative AI library may be incorrectly used. Please check the library documentation.")
-        return naive_prompt  # Fallback to the naive prompt if there's an error
 
     except Exception as e:
         logger.error(f"Error refining prompt with Google GenAI: {e}")
