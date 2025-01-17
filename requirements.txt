@@ -6,3 +6,5 @@ pandas==2.2.3
 pydeck==0.9.1
 altair==5.5.0
 pillow==9.5.0
+setuptools>=65.5.0
+wheel>=0.38.4
