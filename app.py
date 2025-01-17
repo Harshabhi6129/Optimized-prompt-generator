@@ -13,7 +13,8 @@ load_dotenv()
 
 # Set API keys
 openai_api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
-google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENAI_API_KEY"))
+google_genai_key = "AIzaSyARP8sl6V6vnGXRzLyE5G6gi2JhRF8LdzU"
+
 
 # Configure OpenAI
 openai.api_key = openai_api_key
