@@ -3,6 +3,7 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
+st.set_page_config(page_title="GPT-4o Mini Prompt Refinement Experiment", layout="wide")
 
 # Load environment variables
 load_dotenv()
@@ -82,7 +83,6 @@ def generate_response_from_chatgpt(refined_prompt: str) -> str:
 
 
 def main():
-    st.set_page_config(page_title="GPT-4o Mini Prompt Refinement Experiment", layout="wide")
     st.title("🔬 AI Prompt Refinement Experiment with GPT-4o Mini")
 
     st.markdown("""
