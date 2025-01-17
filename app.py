@@ -8,8 +8,8 @@ import google.generativeai as genai
 load_dotenv()
 
 # Set API keys
-openai_api_key = os.getenv("OPENAI_API_KEY")
-google_genai_key = os.getenv("GOOGLE_GENAI_API_KEY")
+openai_api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENAI_API_KEY"))
 
 # Configure OpenAI
 openai.api_key = openai_api_key
