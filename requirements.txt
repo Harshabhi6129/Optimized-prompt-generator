@@ -9,4 +9,5 @@ pillow==11.1.0
 setuptools>=65.5.0
 wheel>=0.38.4
 --only-binary=:all:
-pillow==9.4.0
+pillow==11.1.0
+
