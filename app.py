@@ -18,6 +18,7 @@ google_genai_key = "AIzaSyARP8sl6V6vnGXRzLyE5G6gi2JhRF8LdzU"
 
 # Configure OpenAI
 openai.api_key = openai_api_key
+print(genai)
 
 # Configure Google Generative AI
 if google_genai_key:
