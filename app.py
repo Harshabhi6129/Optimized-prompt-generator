@@ -39,7 +39,7 @@ def refine_prompt_with_google_genai(naive_prompt: str) -> str:
 
         # Use the Google Generative AI SDK's method to call the model
         response = genai.generate_text(
-            model="models/gemini-1.5-flash",
+            model="gemini-1.5-flash",
             prompt=full_prompt,
         )
         refined_text = response.result.strip()
