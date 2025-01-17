@@ -1,7 +1,5 @@
 import openai
 import streamlit as st
-import os
-from dotenv import load_dotenv
 import google.generativeai as genai
 import logging
 
@@ -9,21 +7,17 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
-
-# Set API keys
-openai_api_key = os.getenv("OPENAI_API_KEY")
-google_genai_key = os.getenv("GOOGLE_GENAI_KEY")
-
-# Validate environment variables
-if not openai_api_key:
-    logger.error("Missing OpenAI API key.")
-if not google_genai_key:
-    logger.error("Missing Google Generative AI key.")
+# Set API keys directly
+openai_api_key = "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"
+google_genai_key = "AIzaSyARP8sl6V6vnGXRzLyE5G6gi2JhRF8LdzU"
 
 # Configure OpenAI
-openai.api_key = openai_api_key
+if not openai_api_key:
+    logger.error("OpenAI API Key is missing.")
+    st.error("OpenAI API Key is missing. Please configure it.")
+else:
+    openai.api_key = openai_api_key
+    logger.info("OpenAI API Key loaded successfully.")
 
 # Configure Google Generative AI
 try:
@@ -37,7 +31,6 @@ def refine_prompt_with_google_genai(naive_prompt: str) -> str:
     Use Google Generative AI to refine the naive prompt into a detailed and well-structured prompt.
     """
     try:
-        # Replace GenerativeModel usage with the appropriate API call
         refinement_instruction = (
             "You are an expert prompt optimizer. Transform the given naive prompt into a highly detailed, structured, "
             "and clear prompt that maximizes response quality from an AI model. Ensure it includes necessary context, "
@@ -45,7 +38,7 @@ def refine_prompt_with_google_genai(naive_prompt: str) -> str:
         )
         full_prompt = f"{refinement_instruction}\n\nNaive Prompt: {naive_prompt}"
 
-        response = genai.generate_text(prompt=full_prompt, model="gemini-1.5-flash")
+        response = genai.generate_text(prompt=full_prompt, model="models/gemini-1.5-flash")
         refined_text = response.result.strip()
         logger.info("Prompt refined successfully with Google Generative AI.")
         return refined_text
