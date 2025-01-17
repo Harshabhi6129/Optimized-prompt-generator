@@ -21,9 +21,9 @@ openai.api_key = openai_api_key
 
 # Configure Google Generative AI
 if google_genai_key:
-genai.configure(api_key=google_genai_key)
+   genai.configure(api_key=google_genai_key)
 else:
-st.warning("Google Generative AI key not found. Please set it in the .env file.")
+   st.warning("Google Generative AI key not found. Please set it in the .env file.")
 
 def refine_prompt_with_google_genai(naive_prompt: str) -> str:
 """
