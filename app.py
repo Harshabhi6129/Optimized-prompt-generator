@@ -3,11 +3,18 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
+import logging
+from PIL import Image
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 st.set_page_config(
     page_title="GPT-4o Mini Prompt Refinement Experiment", 
     layout="wide"
 )
+
 # Load environment variables
 load_dotenv()
 
@@ -16,20 +23,40 @@ openai_api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
 google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENAI_API_KEY"))
 
 # Configure OpenAI
-openai.api_key = openai_api_key
+if not openai_api_key:
+    logger.error("OpenAI API Key is missing.")
+    st.error("OpenAI API Key is missing. Please set it in the environment.")
+else:
+    openai.api_key = openai_api_key
+    logger.info("OpenAI API Key loaded successfully.")
 
 # Configure Google Generative AI
 if google_genai_key:
-    genai.configure(api_key=google_genai_key)
+    try:
+        genai.configure(api_key=google_genai_key)
+        logger.info("Google Generative AI configured successfully.")
+    except Exception as e:
+        logger.error(f"Error configuring Google Generative AI: {e}")
+        st.error(f"Error configuring Google Generative AI: {e}")
 else:
-    st.warning("Google Generative AI key not found. Please set it in the .env file.")
+    logger.warning("Google Generative AI key not found.")
+    st.warning("Google Generative AI key not found. Please set it in the environment.")
+
+def load_gemini_pro(model_name: str) -> genai.GenerativeModel:
+    """Returns the Gemini Pro Generative model."""
+    try:
+        model = genai.GenerativeModel(model_name=model_name)
+        return model
+    except Exception as e:
+        logger.error(f"Error loading Gemini Pro model {model_name}: {e}")
+        st.error(f"Error loading Gemini Pro model: {e}")
+        return None
 
 def refine_prompt_with_google_genai(naive_prompt: str) -> str:
     """
-    Use Google Generative AI (text-bison-001) to refine the naive prompt into a detailed and well-structured prompt.
+    Use Google Generative AI to refine the naive prompt into a detailed and well-structured prompt.
     """
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
         refinement_instruction = (
             "You are an expert prompt optimizer. Transform the given naive prompt into a highly detailed, structured, "
             "and clear prompt that maximizes response quality from an AI model. Ensure it includes necessary context, "
@@ -37,20 +64,23 @@ def refine_prompt_with_google_genai(naive_prompt: str) -> str:
         )
         full_prompt = f"{refinement_instruction}\n\nNaive Prompt: {naive_prompt}"
 
-        # Use a valid Google Generative AI model
+        model = load_gemini_pro("gemini-1.5-flash")
+        if not model:
+            raise Exception("Gemini Pro model not loaded successfully.")
+
         response = model.generate_content(full_prompt)
         refined_text = response.text.strip()
+        logger.info("Prompt refined successfully with Google Generative AI.")
         return refined_text
 
     except Exception as e:
+        logger.error(f"Error refining prompt with Google GenAI: {e}")
         st.error(f"Error refining prompt with Google GenAI: {e}")
-        return naive_prompt  # Fallback to the naive prompt if there's an error
-
+        return naive_prompt
 
 def generate_response_from_chatgpt(refined_prompt: str) -> str:
     """
     Send the refined prompt to GPT-4o Mini and retrieve the response.
-    If the first attempt fails, it falls back to `gpt-4o-mini-2024-07-18`.
     """
     messages = [
         {"role": "system", "content": "You are a knowledgeable AI assistant. Provide clear and precise answers."},
@@ -58,33 +88,33 @@ def generate_response_from_chatgpt(refined_prompt: str) -> str:
     ]
 
     try:
-        # Attempt to use the OpenAI API with the specified model
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=messages
         )
+        logger.info("Response generated successfully with GPT-4o Mini.")
         return response['choices'][0]['message']['content'].strip()
 
-    except openai.error.InvalidRequestError:
+    except openai.error.InvalidRequestError as e:
+        logger.error(f"InvalidRequestError: {e}")
         return "⚠️ Invalid model or request parameters."
 
     except Exception as e:
+        logger.error(f"Error in generating response: {e}")
         return f"Error in generating response: {str(e)}"
-
-
 
 def main():
     st.title("🔬 AI Prompt Refinement Experiment with GPT-4o Mini")
 
     st.markdown("""
-    **Goal:** This experiment tests whether a well-structured prompt can make a normal AI model (GPT-4o Mini) 
-    generate high-quality responses, comparable to more powerful models.
-    
-    1. Enter a naive prompt below.
-    2. The system will refine it using Google Generative AI.
-    3. The refined prompt will then be passed to **GPT-4o Mini**.
-    4. Compare the results!
-    """)
+       **Goal:** This experiment tests whether a well-structured prompt can make a normal AI model (GPT-4o Mini) 
+       generate high-quality responses, comparable to more powerful models.
+       
+       1. Enter a naive prompt below.
+       2. The system will refine it using Google Generative AI.
+       3. The refined prompt will then be passed to **GPT-4o Mini**.
+       4. Compare the results!
+       """)
 
     naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=150)
 
