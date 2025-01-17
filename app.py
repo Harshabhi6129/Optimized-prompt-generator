@@ -3,8 +3,11 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
-st.set_page_config(page_title="GPT-4o Mini Prompt Refinement Experiment", layout="wide")
 
+st.set_page_config(
+    page_title="GPT-4o Mini Prompt Refinement Experiment", 
+    layout="wide"
+)
 # Load environment variables
 load_dotenv()
 
@@ -16,27 +19,30 @@ google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENA
 openai.api_key = openai_api_key
 
 # Configure Google Generative AI
-# if google_genai_key:
-genai.configure(api_key=google_genai_key)
-# else:
-#     st.warning("Google Generative AI key not found. Please set it in the .env file.")
+if google_genai_key:
+    genai.configure(api_key=google_genai_key)
+else:
+    st.warning("Google Generative AI key not found. Please set it in the .env file.")
 
 def refine_prompt_with_google_genai(naive_prompt: str) -> str:
     """
     Use Google Generative AI (gemini-1.5-flash) to refine the naive prompt into a detailed and well-structured prompt.
     """
     try:
-        
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # Ensure the Google API is properly configured
         refinement_instruction = (
             "You are an expert prompt optimizer. Transform the given naive prompt into a highly detailed, structured, "
             "and clear prompt that maximizes response quality from an AI model. Ensure it includes necessary context, "
             "clarifications, and formatting to improve the accuracy of the AI's response."
         )
         full_prompt = f"{refinement_instruction}\n\nNaive Prompt: {naive_prompt}"
-        
-        response = model.generate_content(full_prompt)
-        refined_text = response.text.strip()
+
+        # Use the Google Generative AI SDK's method to call the model
+        response = genai.generate_text(
+            model="models/text-bison-001",
+            prompt=full_prompt,
+        )
+        refined_text = response.result.strip()
         return refined_text
 
     except Exception as e:
@@ -54,32 +60,19 @@ def generate_response_from_chatgpt(refined_prompt: str) -> str:
     ]
 
     try:
-        client = openai.OpenAI()
+        # Attempt to use the OpenAI API with the specified model
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=messages
+        )
+        return response['choices'][0]['message']['content'].strip()
 
-        # Attempt to use `gpt-4o-mini`
-        model_name = "gpt-4o-mini"
-
-        try:
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=messages
-            )
-        except openai.APIError as e:
-            if "model_not_found" in str(e):
-                print("⚠️ `gpt-4o-mini` not available, switching to `gpt-4o-mini-2024-07-18`.")
-                model_name = "gpt-4o-mini-2024-07-18"
-                response = client.chat.completions.create(
-                    model=model_name,
-                    messages=messages
-                )
-
-        return response.choices[0].message.content.strip()
-
-    except openai.error.RateLimitError:
-        return "⚠️ OpenAI API quota exceeded. Please check your billing or try a different API key."
+    except openai.error.InvalidRequestError:
+        return "⚠️ Invalid model or request parameters."
 
     except Exception as e:
         return f"Error in generating response: {str(e)}"
+
 
 
 def main():
