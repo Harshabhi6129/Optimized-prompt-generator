@@ -26,10 +26,10 @@ else:
 
 def refine_prompt_with_google_genai(naive_prompt: str) -> str:
     """
-    Use Google Generative AI (gemini-1.5-flash) to refine the naive prompt into a detailed and well-structured prompt.
+    Use Google Generative AI (text-bison-001) to refine the naive prompt into a detailed and well-structured prompt.
     """
     try:
-        # Ensure the Google API is properly configured
+        model = genai.GenerativeModel("gemini-1.5-flash")
         refinement_instruction = (
             "You are an expert prompt optimizer. Transform the given naive prompt into a highly detailed, structured, "
             "and clear prompt that maximizes response quality from an AI model. Ensure it includes necessary context, "
@@ -37,17 +37,15 @@ def refine_prompt_with_google_genai(naive_prompt: str) -> str:
         )
         full_prompt = f"{refinement_instruction}\n\nNaive Prompt: {naive_prompt}"
 
-        # Use the Google Generative AI SDK's method to call the model
-        response = genai.generate_text(
-            model="models/text-bison-001",
-            prompt=full_prompt,
-        )
-        refined_text = response.result.strip()
+        # Use a valid Google Generative AI model
+        response = model.generate_content(full_prompt)
+        refined_text = response.text.strip()
         return refined_text
 
     except Exception as e:
         st.error(f"Error refining prompt with Google GenAI: {e}")
         return naive_prompt  # Fallback to the naive prompt if there's an error
+
 
 def generate_response_from_chatgpt(refined_prompt: str) -> str:
     """
