@@ -27,9 +27,7 @@ except Exception as e:
     logger.error(f"Error configuring Google GenAI: {e}")
 
 def refine_prompt_with_google_genai(naive_prompt: str) -> str:
-    """
-    Use Google Generative AI to refine the naive prompt into a detailed and well-structured prompt.
-    """
+    """Use Google Generative AI to refine the naive prompt into a detailed and well-structured prompt."""
     try:
         refinement_instruction = (
             "You are an expert prompt optimizer. Transform the given naive prompt into a highly detailed, structured, "
@@ -38,7 +36,8 @@ def refine_prompt_with_google_genai(naive_prompt: str) -> str:
         )
         full_prompt = f"{refinement_instruction}\n\nNaive Prompt: {naive_prompt}"
 
-        response = genai.generate_text(prompt=full_prompt, model="models/gemini-1.5-flash")
+        # Try different model names if necessary
+        response = genai.generate_text(prompt=full_prompt, model="models/text-bison-001")
         refined_text = response.result.strip()
         logger.info("Prompt refined successfully with Google Generative AI.")
         return refined_text
@@ -49,9 +48,7 @@ def refine_prompt_with_google_genai(naive_prompt: str) -> str:
         return naive_prompt  # Fallback to the naive prompt if there's an error
 
 def generate_response_from_chatgpt(refined_prompt: str) -> str:
-    """
-    Send the refined prompt to GPT-4o Mini and retrieve the response.
-    """
+    """Send the refined prompt to GPT-4o Mini and retrieve the response."""
     messages = [
         {"role": "system", "content": "You are a knowledgeable AI assistant. Provide clear and precise answers."},
         {"role": "user", "content": refined_prompt},
