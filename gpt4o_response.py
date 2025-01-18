@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 def generate_response_from_chatgpt(refined_prompt: str) -> str:
     messages = [
-        {"role": "system", "content": "You are a knowledgeable assistant. Provide clear and precise answers."},
-        {"role": "user", "content": refined_prompt},
+        {"role": "system", "content": "You are a knowledgeable AI assistant."},
+        {"role": "user", "content": refined_prompt}
     ]
     try:
         response = openai.ChatCompletion.create(
@@ -16,5 +16,5 @@ def generate_response_from_chatgpt(refined_prompt: str) -> str:
         )
         return response['choices'][0]['message']['content'].strip()
     except Exception as e:
-        logger.error(f"Error generating response: {e}")
+        logger.error(f"GPT-4o Mini Error: {e}")
         return "Error generating response."
