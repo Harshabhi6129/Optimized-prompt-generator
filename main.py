@@ -58,7 +58,7 @@ def main():
     st.markdown("""
         **Instructions**  
         1. Enter a naive prompt below.  
-        2. Click **Generate Custom Filters** or **Refine Prompt** directly.  
+        2. Click **Generate Custom Filters** or **Refine Prompt Directly**.  
         3. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
         4. Refined Prompt and Output will appear on the right side.
     """)
