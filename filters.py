@@ -10,41 +10,58 @@ logger = logging.getLogger(__name__)
 # Default Filters
 # -----------------------------------------------------------------------------
 def get_default_filters() -> dict:
+    """
+    Generate the default filters for the app.
+    """
     st.subheader("Default Filters")
 
-    # Answer Format
+    # Preferred answer format
     answer_format = st.radio(
         "Preferred answer format:",
         options=["Paragraph", "Bullet Points"],
         key="default_answer_format"
     )
 
-    # Explanation Length
+    # Explanation length
     explanation_length = st.radio(
         "Explanation length:",
         options=["Short", "Long"],
         key="default_explanation_length"
     )
 
-    # Length of Output (5 levels)
-    output_length = st.radio(
+    # Tone of response
+    tone_of_response = st.radio(
+        "Preferred tone of response:",
+        options=["Formal", "Informal", "Neutral"],
+        key="default_tone_of_response"
+    )
+
+    # Length of output as a slider
+    output_length_level = st.slider(
         "Length of output:",
-        options=["Very Brief", "Brief", "Moderate", "Detailed", "Very Detailed"],
+        min_value=1,
+        max_value=5,
+        value=3,  # Default to Medium
+        step=1,
+        format="%d",
         key="default_output_length"
     )
 
-    # Tone of Response
-    tone_of_response = st.radio(
-        "Tone of response:",
-        options=["Formal", "Informal", "Neutral", "Friendly", "Professional"],
-        key="default_tone_of_response"
-    )
+    # Map slider values to descriptive levels
+    output_length_mapping = {
+        1: "Very Short",
+        2: "Short",
+        3: "Medium",
+        4: "Long",
+        5: "Very Long"
+    }
+    output_length = output_length_mapping[output_length_level]
 
     return {
         "Answer Format": answer_format,
         "Explanation Length": explanation_length,
-        "Output Length": output_length,
-        "Tone of Response": tone_of_response
+        "Tone of Response": tone_of_response,
+        "Output Length": output_length
     }
 
 # -----------------------------------------------------------------------------
