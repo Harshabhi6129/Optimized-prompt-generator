@@ -12,21 +12,39 @@ logger = logging.getLogger(__name__)
 def get_default_filters() -> dict:
     st.subheader("Default Filters")
 
+    # Answer Format
     answer_format = st.radio(
         "Preferred answer format:",
         options=["Paragraph", "Bullet Points"],
         key="default_answer_format"
     )
 
+    # Explanation Length
     explanation_length = st.radio(
         "Explanation length:",
         options=["Short", "Long"],
         key="default_explanation_length"
     )
 
+    # Length of Output (5 levels)
+    output_length = st.radio(
+        "Length of output:",
+        options=["Very Brief", "Brief", "Moderate", "Detailed", "Very Detailed"],
+        key="default_output_length"
+    )
+
+    # Tone of Response
+    tone_of_response = st.radio(
+        "Tone of response:",
+        options=["Formal", "Informal", "Neutral", "Friendly", "Professional"],
+        key="default_tone_of_response"
+    )
+
     return {
         "Answer Format": answer_format,
-        "Explanation Length": explanation_length
+        "Explanation Length": explanation_length,
+        "Output Length": output_length,
+        "Tone of Response": tone_of_response
     }
 
 # -----------------------------------------------------------------------------
