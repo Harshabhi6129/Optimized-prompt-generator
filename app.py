@@ -288,7 +288,7 @@ def generate_response_from_chatgpt(refined_prompt: str) -> str:
 # Main Streamlit App
 # -----------------------------------------------------------------------------
 def main():
-    st.title("🔬 AI Prompt Refinement 2.1 — Strict JSON & Relevant Filters")
+    st.title("🔬 AI Prompt Refinement 2.1")
 
     st.markdown("""
         **Instructions**  
