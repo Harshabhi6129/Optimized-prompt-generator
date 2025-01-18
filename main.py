@@ -21,23 +21,25 @@ configure_genai(openai_api_key, google_genai_key)
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Title
-    st.markdown(
-        "<h1 style='text-align: center;'>🔬 AI Prompt Refinement 2.1</h1>",
-        unsafe_allow_html=True
-    )
-    st.write("")  # Vertical spacing
+    # Create two main columns for layout: left and right
+    col_left, col_right = st.columns([2, 3])  # Adjust width ratio as needed
 
-    # Centered layout
-    col_left, col_center, col_right = st.columns([1, 2, 1])
-    with col_center:
+    # Left Side: Title, Text Input, Filters
+    with col_left:
+        # Title
+        st.markdown(
+            "<h1 style='text-align: left;'>🔬 AI Prompt Refinement 2.1</h1>",
+            unsafe_allow_html=True
+        )
+        st.write("")  # Vertical spacing
+
         # Instructions
         st.markdown("""
         **Instructions**  
         1. Enter a naive prompt below.  
         2. Click **Generate Custom Filters**.  
         3. Adjust the **Default Filters** and fill out the **Custom Filters**.  
-        4. Click **Refine Prompt**, then **Get Final Answer** from GPT-4o Mini.
+        4. Refined Prompt and Output will appear on the right side.
         """)
 
         # Naive Prompt Input
@@ -77,11 +79,14 @@ def main():
                     st.session_state["refined_prompt"] = refined_prompt
                     st.success("Prompt refined successfully!")
 
-        # Refined Prompt and Final Answer
+    # Right Side: Refined Prompt and Final Output
+    with col_right:
+        # Refined Prompt Section
         if "refined_prompt" in st.session_state:
             st.markdown("### 📌 Refined Prompt")
             st.text_area("Refined Prompt", st.session_state["refined_prompt"], height=120)
 
+            # Button: Get Final Answer
             if st.button("Get Final Answer from GPT-4o Mini"):
                 with st.spinner("Generating response..."):
                     gpt_response = generate_response_from_chatgpt(st.session_state["refined_prompt"])
