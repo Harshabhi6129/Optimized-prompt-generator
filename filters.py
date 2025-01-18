@@ -30,14 +30,40 @@ def get_default_filters() -> dict:
     }
 
 # -----------------------------------------------------------------------------
-# Dynamic Filters
+# Generate Dynamic Filters
 # -----------------------------------------------------------------------------
 def generate_dynamic_filters(naive_prompt: str) -> dict:
     system_instruction = """
 IMPORTANT: Output must be strictly valid JSON. Do NOT include code blocks, disclaimers, 
 or additional commentary. No markdown formatting or extra text. 
-...
+
+Your task: 
+- Read the user's naive prompt.
+- Identify relevant filter questions or user preferences that would help refine 
+  the final answer. 
+- Return a JSON object with a "custom_filters" key, which is a list of filter definitions. 
+- Each filter definition can have:
+    "type" (e.g. "text_input", "checkbox", "radio", "selectbox"),
+    "label" (string describing the filter),
+    "key"   (unique string key),
+    "options" (array of strings, only if type is "radio", "selectbox", or "checkbox" with multiple options).
+- Ensure the filters are specifically relevant to the user's prompt. 
+- Do NOT include non-relevant or generic filters if they don't make sense.
+
+Structure must look like:
+{
+  "custom_filters": [
+    {
+      "type": "...",
+      "label": "...",
+      "key": "...",
+      "options": [...]
+    },
+    ...
+  ]
+}
 """
+
     full_prompt = f"{system_instruction}\n\nNaive Prompt:\n{naive_prompt}"
 
     model = load_gemini_pro("gemini-1.5-flash")
@@ -49,19 +75,25 @@ or additional commentary. No markdown formatting or extra text.
         try:
             response = model.generate_content(full_prompt)
             text_output = response.text.strip()
+            logger.info(f"[Attempt {attempt}] LLM output: {text_output}")
+
+            # Extract JSON
             json_match = re.search(r"{.*}", text_output, re.DOTALL)
             if json_match:
                 text_output = json_match.group(0)
+
             parsed_output = json.loads(text_output)
             if "custom_filters" not in parsed_output:
                 raise ValueError("No 'custom_filters' key found.")
             return parsed_output
         except Exception as e:
-            logger.error(f"JSON parse error: {e}")
-            if attempt == 1:
-                st.error("Failed to generate valid JSON. Using fallback filters.")
+            logger.error(f"JSON Parsing Error: {e}")
+
+    # Fallback Filters
     return {
-        "custom_filters": [{"type": "text_input", "label": "Fallback: Specify your goal", "key": "fallback_goal"}]
+        "custom_filters": [
+            {"type": "text_input", "label": "Fallback: Specify your goal", "key": "fallback_goal"}
+        ]
     }
 
 # -----------------------------------------------------------------------------
