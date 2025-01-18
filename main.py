@@ -21,15 +21,17 @@ configure_genai(openai_api_key, google_genai_key)
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
+    # Title
     st.markdown(
         "<h1 style='text-align: center;'>🔬 AI Prompt Refinement 2.1</h1>",
         unsafe_allow_html=True
     )
     st.write("")  # Vertical spacing
 
+    # Centered layout
     col_left, col_center, col_right = st.columns([1, 2, 1])
-
     with col_center:
+        # Instructions
         st.markdown("""
         **Instructions**  
         1. Enter a naive prompt below.  
@@ -38,9 +40,10 @@ def main():
         4. Click **Refine Prompt**, then **Get Final Answer** from GPT-4o Mini.
         """)
 
-        # Naive Prompt
+        # Naive Prompt Input
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120)
 
+        # Button: Generate Custom Filters
         if st.button("Generate Custom Filters"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
@@ -59,10 +62,12 @@ def main():
             custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
             user_custom_choices = display_custom_filters(custom_definitions)
 
+        # Button: Refine Prompt
         if st.button("Refine Prompt"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
             else:
+                # Combine Default and Custom Filters
                 all_filters = {
                     "Default": default_filter_choices,
                     "Custom": user_custom_choices
@@ -72,6 +77,7 @@ def main():
                     st.session_state["refined_prompt"] = refined_prompt
                     st.success("Prompt refined successfully!")
 
+        # Refined Prompt and Final Answer
         if "refined_prompt" in st.session_state:
             st.markdown("### 📌 Refined Prompt")
             st.text_area("Refined Prompt", st.session_state["refined_prompt"], height=120)
@@ -82,5 +88,8 @@ def main():
                 st.markdown("### 💬 GPT-4o Mini Response")
                 st.write(gpt_response)
 
+# -----------------------------------------------------------------------------
+# Entry Point
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     main()
