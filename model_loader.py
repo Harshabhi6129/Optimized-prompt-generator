@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 def configure_genai(openai_key: str, google_genai_key: str):
     if openai_key:
-        st.write("OpenAI API Key loaded successfully.")
+        logger.info("OpenAI API Key loaded successfully.")
     else:
         st.error("OpenAI API Key is missing.")
 
