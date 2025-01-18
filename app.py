@@ -80,15 +80,15 @@ def get_default_filters() -> dict:
 # -----------------------------------------------------------------------------
 # 2) Generate Dynamic (Custom) Filters
 # -----------------------------------------------------------------------------
+import re
+
 def generate_dynamic_filters(naive_prompt: str) -> dict:
     """
     Asks the LLM to produce strictly valid JSON that defines custom filters
-    relevant to the user's naive prompt.
+    relevant to the user's naive prompt. Implements enhanced handling for
+    invalid JSON or additional non-JSON content.
     """
 
-    # IMPORTANT: We strongly instruct the model to return ONLY JSON,
-    # with no disclaimers or additional text.
-    # We also remind it to keep the custom filters relevant to the prompt.
     system_instruction = """
 IMPORTANT: Output must be strictly valid JSON. Do NOT include code blocks, disclaimers, 
 or additional commentary. No markdown formatting or extra text. 
@@ -120,7 +120,6 @@ Structure must look like:
 }
 """
 
-    # We embed the user prompt in the full_prompt
     full_prompt = f"{system_instruction}\n\nNaive Prompt:\n{naive_prompt}"
 
     model = load_gemini_pro("gemini-1.5-flash")
@@ -128,8 +127,7 @@ Structure must look like:
         st.error("Gemini Pro model not loaded successfully.")
         return {"custom_filters": []}
 
-    # We'll try up to two attempts at generating valid JSON.
-    # If it fails both times, we fallback.
+    # Try generating JSON with retry and cleanup steps
     max_attempts = 2
     for attempt in range(1, max_attempts + 1):
         try:
@@ -137,20 +135,25 @@ Structure must look like:
             text_output = response.text.strip()
             logger.info(f"[Attempt {attempt}] LLM output: {text_output}")
 
-            # Attempt to parse the model output as JSON
+            # Clean up any extra text around the JSON using regex
+            json_match = re.search(r"{.*}", text_output, re.DOTALL)
+            if json_match:
+                text_output = json_match.group(0)
+
+            # Attempt to parse the cleaned output as JSON
             parsed_output = json.loads(text_output)
+
             if "custom_filters" not in parsed_output:
                 raise ValueError("No 'custom_filters' key found in JSON.")
 
-            # If we get here, we have valid JSON with a 'custom_filters' list
-            return parsed_output
+            return parsed_output  # Valid JSON parsed successfully
 
         except Exception as e:
             logger.error(f"[Attempt {attempt}] JSON parse error: {e}")
             if attempt < max_attempts:
                 st.warning("LLM returned invalid JSON. Retrying...")
             else:
-                st.error(f"All attempts to parse filters failed. Using fallback filters.")
+                st.error("All attempts to parse filters failed. Using fallback filters.")
 
     # Final fallback if both attempts fail:
     return {
