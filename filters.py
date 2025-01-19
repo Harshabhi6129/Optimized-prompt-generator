@@ -22,6 +22,13 @@ def get_default_filters() -> dict:
         key="default_answer_format"
     )
 
+    # Explanation length
+    explanation_length = st.radio(
+        "Explanation length:",
+        options=["Short", "Long"],
+        key="default_explanation_length"
+    )
+
     # Tone of response
     tone_of_response = st.radio(
         "Preferred tone of response:",
