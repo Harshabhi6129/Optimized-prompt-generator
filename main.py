@@ -37,23 +37,35 @@ def main():
         st.markdown("""
         **Instructions**  
         1. Enter a naive prompt below.  
-        2. Click **Generate Custom Filters**.  
-        3. Adjust the **Default Filters** and fill out the **Custom Filters**.  
+        2. Click **Generate Custom Filters** or **Refine Prompt Directly**.  
+        3. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
         4. Refined Prompt and Output will appear on the right side.
         """)
 
         # Naive Prompt Input
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120)
 
-        # Button: Generate Custom Filters
-        if st.button("Generate Custom Filters"):
-            if not naive_prompt.strip():
-                st.error("Please enter a valid naive prompt.")
-            else:
-                with st.spinner("Analyzing your prompt to suggest custom filters..."):
-                    filters_data = generate_dynamic_filters(naive_prompt)
-                    st.session_state["custom_filters_data"] = filters_data
-                    st.success("Custom filters generated successfully!")
+        # Buttons: Generate Custom Filters and Refine Prompt Directly
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("Generate Custom Filters"):
+                if not naive_prompt.strip():
+                    st.error("Please enter a valid naive prompt.")
+                else:
+                    with st.spinner("Analyzing your prompt to suggest custom filters..."):
+                        filters_data = generate_dynamic_filters(naive_prompt)
+                        st.session_state["custom_filters_data"] = filters_data
+                        st.success("Custom filters generated successfully!")
+
+        with col2:
+            if st.button("Refine Prompt Directly"):
+                if not naive_prompt.strip():
+                    st.error("Please enter a valid naive prompt.")
+                else:
+                    with st.spinner("Refining your prompt with Google Generative AI..."):
+                        refined_prompt = refine_prompt_with_google_genai(naive_prompt, {})
+                        st.session_state["refined_prompt"] = refined_prompt
+                        st.success("Prompt refined successfully!")
 
         # Default Filters
         default_filter_choices = get_default_filters()
@@ -64,8 +76,8 @@ def main():
             custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
             user_custom_choices = display_custom_filters(custom_definitions)
 
-        # Button: Refine Prompt
-        if st.button("Refine Prompt"):
+        # Button: Refine Prompt with Filters
+        if st.button("Refine Prompt with Filters"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
             else:
@@ -83,8 +95,14 @@ def main():
     with col_right:
         # Refined Prompt Section
         if "refined_prompt" in st.session_state:
-            st.markdown("### 📌 Refined Prompt")
-            st.text_area("Refined Prompt", st.session_state["refined_prompt"], height=120)
+            st.markdown("### 📌 Editable Refined Prompt")
+            editable_refined_prompt = st.text_area(
+                "Refined Prompt (Editable)", 
+                st.session_state["refined_prompt"], 
+                height=120, 
+                key="editable_refined_prompt"
+            )
+            st.session_state["refined_prompt"] = editable_refined_prompt  # Update the refined prompt if edited
 
             # Button: Get Final Answer
             if st.button("Get Final Answer from GPT-4o Mini"):
