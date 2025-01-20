@@ -28,7 +28,7 @@ def main():
     with col_left:
         # Title
         st.markdown(
-            "<h1 style='text-align: left;'>🔬 AI Prompt Refinement 2.1</h1>",
+            "<h1 style='text-align: left;'>🔬 AI Prompt Refinement </h1>",
             unsafe_allow_html=True
         )
         st.write("")  # Vertical spacing
@@ -52,7 +52,7 @@ def main():
                 if not naive_prompt.strip():
                     st.error("Please enter a valid naive prompt.")
                 else:
-                    with st.spinner("Analyzing your prompt to suggest custom filters..."):
+                    with st.spinner("Analyzing your prompt to suggest custom filters"):
                         filters_data = generate_dynamic_filters(naive_prompt)
                         st.session_state["custom_filters_data"] = filters_data
                         st.success("Custom filters generated successfully!")
@@ -62,7 +62,7 @@ def main():
                 if not naive_prompt.strip():
                     st.error("Please enter a valid naive prompt.")
                 else:
-                    with st.spinner("Refining your prompt with Google Generative AI..."):
+                    with st.spinner("Refining your prompt"):
                         refined_prompt = refine_prompt_with_google_genai(naive_prompt, {})
                         st.session_state["refined_prompt"] = refined_prompt
                         st.success("Prompt refined successfully!")
@@ -86,7 +86,7 @@ def main():
                     "Default": default_filter_choices,
                     "Custom": user_custom_choices
                 }
-                with st.spinner("Refining your prompt with Google Generative AI..."):
+                with st.spinner("Refining your prompt"):
                     refined_prompt = refine_prompt_with_google_genai(naive_prompt, all_filters)
                     st.session_state["refined_prompt"] = refined_prompt
                     st.success("Prompt refined successfully!")
@@ -105,10 +105,10 @@ def main():
             st.session_state["refined_prompt"] = editable_refined_prompt  # Update the refined prompt if edited
 
             # Button: Get Final Answer
-            if st.button("Get Final Answer from GPT-4o Mini"):
+            if st.button("Submit"):
                 with st.spinner("Generating response..."):
                     gpt_response = generate_response_from_chatgpt(st.session_state["refined_prompt"])
-                st.markdown("### 💬 GPT-4o Mini Response")
+                st.markdown("### 💬 Response")
                 st.write(gpt_response)
 
 # -----------------------------------------------------------------------------
