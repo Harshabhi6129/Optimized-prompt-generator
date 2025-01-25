@@ -63,6 +63,7 @@ Your task:
     "options" (array of strings, only if type is "radio", "selectbox", or "checkbox" with multiple options).
 - Ensure the filters are specifically relevant to the user's prompt. 
 - Do NOT include non-relevant or generic filters if they don't make sense.
+- Do NOT include any additional text, explanations, or disclaimers.
 
 Structure must look like:
 {
@@ -106,7 +107,7 @@ Structure must look like:
     # Fallback Filters
     return {
         "custom_filters": [
-            {"type": "text_input", "label": "Fallback: Specify your goal", "key": "fallback_goal"}
+            {"type": "text_input", "label": "Specify your goal", "key": "fallback_goal"}
         ]
     }
 
