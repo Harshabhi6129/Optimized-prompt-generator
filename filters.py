@@ -106,7 +106,7 @@ Structure must look like:
     # Fallback Filters
     return {
         "custom_filters": [
-            {"type": "text_input", "label": "Fallback: Specify your goal", "key": "fallback_goal"}
+            {"type": "text_input", "label": "Specify your goal", "key": "fallback_goal"}
         ]
     }
 
