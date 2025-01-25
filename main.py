@@ -1,118 +1,139 @@
 import streamlit as st
-from dotenv import load_dotenv
-from filters import get_default_filters, generate_dynamic_filters, display_custom_filters
-from prompt_refinement import refine_prompt_with_google_genai
-from gpt4o_response import generate_response_from_chatgpt
-from model_loader import configure_genai
-import os
+import re
+import json
+import logging
+from model_loader import load_gemini_pro
+
+logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
-# Streamlit Setup
+# Default Filters
 # -----------------------------------------------------------------------------
-st.set_page_config(page_title="GPT-4o Advanced Prompt Refinement", layout="wide")
-load_dotenv()
+def get_default_filters() -> dict:
+    st.subheader("Default Filters")
 
-# Configure Generative AI
-openai_api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
-google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENAI_API_KEY"))
-configure_genai(openai_api_key, google_genai_key)
+    # Preferred Answer Format
+    answer_format = st.radio(
+        "Preferred answer format:",
+        options=["Paragraph", "Bullet Points"],
+        key="default_answer_format"
+    )
+
+    # Preferred Tone of Response
+    tone_of_response = st.radio(
+        "Preferred tone of response:",
+        options=["Formal", "Informal", "Neutral"],
+        key="default_tone_of_response"
+    )
+
+    # Length of Output
+    output_length = st.slider(
+        "Length of output:",
+        min_value=1,
+        max_value=5,
+        value=3,
+        step=1,
+        format="%d",
+        key="default_output_length"
+    )
+
+    return {
+        "Answer Format": answer_format,
+        "Tone of Response": tone_of_response,
+        "Output Length": output_length
+    }
 
 # -----------------------------------------------------------------------------
-# Main Function
+# Generate Dynamic Filters
 # -----------------------------------------------------------------------------
-def main():
-    # Create two main columns for layout: left and right
-    col_left, col_right = st.columns([2, 3])  # Adjust width ratio as needed
+def generate_dynamic_filters(naive_prompt: str) -> dict:
+    system_instruction = """
+IMPORTANT: Output must be strictly valid JSON. Do NOT include code blocks, disclaimers, 
+or additional commentary. No markdown formatting or extra text. 
 
-    # Left Side: Title, Text Input, Filters
-    with col_left:
-        # Title
-        st.markdown(
-            "<h1 style='text-align: left;'>🔬 AI Prompt Refinement </h1>",
-            unsafe_allow_html=True
-        )
-        st.write("")  # Vertical spacing
+Your task: 
+- Read the user's naive prompt.
+- Identify relevant filter questions or user preferences that would help refine 
+  the final answer. 
+- Return a JSON object with a "custom_filters" key, which is a list of filter definitions. 
+- Each filter definition can have:
+    "type" (e.g. "text_input", "checkbox", "radio", "selectbox"),
+    "label" (string describing the filter),
+    "key"   (unique string key),
+    "options" (array of strings, only if type is "radio", "selectbox", or "checkbox" with multiple options).
+- Ensure the filters are specifically relevant to the user's prompt. 
+- Do NOT include non-relevant or generic filters if they don't make sense.
 
-        # Instructions
-        st.markdown("""
-        **Instructions**  
-        1. Enter a naive prompt below.  
-        2. Click **Generate Custom Filters** or **Refine Prompt Directly**.  
-        3. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
-        4. Refined Prompt and Output will appear on the right side.
-        """)
+Structure must look like:
+{
+  "custom_filters": [
+    {
+      "type": "...",
+      "label": "...",
+      "key": "...",
+      "options": [...]
+    },
+    ...
+  ]
+}
+"""
 
-        # Naive Prompt Input
-        naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120)
+    full_prompt = f"{system_instruction}\n\nNaive Prompt:\n{naive_prompt}"
 
-        # Buttons: Generate Custom Filters and Refine Prompt Directly
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button("Generate Custom Filters"):
-                if not naive_prompt.strip():
-                    st.error("Please enter a valid naive prompt.")
-                else:
-                    with st.spinner("Analyzing your prompt to suggest custom filters"):
-                        filters_data = generate_dynamic_filters(naive_prompt)
-                        st.session_state["custom_filters_data"] = filters_data
-                        st.success("Custom filters generated successfully!")
+    model = load_gemini_pro("gemini-1.5-flash")
+    if not model:
+        st.error("Gemini Pro model not loaded successfully.")
+        return {"custom_filters": []}
 
-        with col2:
-            if st.button("Refine Prompt Directly"):
-                if not naive_prompt.strip():
-                    st.error("Please enter a valid naive prompt.")
-                else:
-                    with st.spinner("Refining your prompt"):
-                        refined_prompt = refine_prompt_with_google_genai(naive_prompt, {})
-                        st.session_state["refined_prompt"] = refined_prompt
-                        st.success("Prompt refined successfully!")
+    for attempt in range(2):
+        try:
+            response = model.generate_content(full_prompt)
+            text_output = response.text.strip()
+            logger.info(f"[Attempt {attempt}] LLM output: {text_output}")
 
-        # Default Filters
-        default_filter_choices = get_default_filters()
+            # Extract JSON
+            json_match = re.search(r"{.*}", text_output, re.DOTALL)
+            if json_match:
+                text_output = json_match.group(0)
 
-        # Display Custom Filters
-        user_custom_choices = {}
-        if "custom_filters_data" in st.session_state:
-            custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
-            user_custom_choices = display_custom_filters(custom_definitions)
+            parsed_output = json.loads(text_output)
+            if "custom_filters" not in parsed_output:
+                raise ValueError("No 'custom_filters' key found.")
+            return parsed_output
+        except Exception as e:
+            logger.error(f"JSON Parsing Error: {e}")
 
-        # Button: Refine Prompt with Filters
-        if st.button("Refine Prompt with Filters"):
-            if not naive_prompt.strip():
-                st.error("Please enter a valid naive prompt.")
+    # Fallback Filters
+    return {
+        "custom_filters": [
+            {"type": "text_input", "label": "Specify your goal", "key": "fallback_goal"}
+        ]
+    }
+
+# -----------------------------------------------------------------------------
+# Display Custom Filters
+# -----------------------------------------------------------------------------
+def display_custom_filters(custom_filters: list) -> dict:
+    st.subheader("Custom Filters")
+
+    user_custom_choices = {}
+    for filter_def in custom_filters:
+        f_type = filter_def.get("type", "text_input")
+        f_label = filter_def.get("label", "Filter")
+        f_key = filter_def.get("key", f"custom_{f_label}")
+        f_options = filter_def.get("options", [])
+
+        if f_type == "text_input":
+            user_custom_choices[f_label] = st.text_input(f_label, key=f_key)
+        elif f_type == "checkbox":
+            if not f_options:
+                user_custom_choices[f_label] = st.checkbox(f_label, key=f_key)
             else:
-                # Combine Default and Custom Filters
-                all_filters = {
-                    "Default": default_filter_choices,
-                    "Custom": user_custom_choices
-                }
-                with st.spinner("Refining your prompt"):
-                    refined_prompt = refine_prompt_with_google_genai(naive_prompt, all_filters)
-                    st.session_state["refined_prompt"] = refined_prompt
-                    st.success("Prompt refined successfully!")
-
-    # Right Side: Refined Prompt and Final Output
-    with col_right:
-        # Refined Prompt Section
-        if "refined_prompt" in st.session_state:
-            st.markdown("### 📌 Editable Refined Prompt")
-            editable_refined_prompt = st.text_area(
-                "Refined Prompt (Editable)", 
-                st.session_state["refined_prompt"], 
-                height=120, 
-                key="editable_refined_prompt"
-            )
-            st.session_state["refined_prompt"] = editable_refined_prompt  # Update the refined prompt if edited
-
-            # Button: Get Final Answer
-            if st.button("Submit"):
-                with st.spinner("Generating response..."):
-                    gpt_response = generate_response_from_chatgpt(st.session_state["refined_prompt"])
-                st.markdown("### 💬 Response")
-                st.write(gpt_response)
-
-# -----------------------------------------------------------------------------
-# Entry Point
-# -----------------------------------------------------------------------------
-if __name__ == "__main__":
-    main()
+                user_custom_choices[f_label] = [
+                    opt for opt in f_options if st.checkbox(opt, key=f"{f_key}_{opt}")
+                ]
+        elif f_type == "radio":
+            user_custom_choices[f_label] = st.radio(f_label, options=f_options, key=f_key)
+        elif f_type == "selectbox":
+            user_custom_choices[f_label] = st.selectbox(f_label, options=f_options, key=f_key)
+    return user_custom_choices
