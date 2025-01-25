@@ -47,7 +47,7 @@ def get_default_filters() -> dict:
 # Generate Dynamic Filters
 # -----------------------------------------------------------------------------
 def generate_dynamic_filters(naive_prompt: str) -> dict:
-    system_instruction = """
+        system_instruction = """
 IMPORTANT: Output must be strictly valid JSON. Do NOT include code blocks, disclaimers, 
 or additional commentary. No markdown formatting or extra text. 
 
@@ -63,6 +63,7 @@ Your task:
     "options" (array of strings, only if type is "radio", "selectbox", or "checkbox" with multiple options).
 - Ensure the filters are specifically relevant to the user's prompt. 
 - Do NOT include non-relevant or generic filters if they don't make sense.
+- Do NOT include any additional text, explanations, or disclaimers.
 
 Structure must look like:
 {
