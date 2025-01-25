@@ -18,29 +18,6 @@ google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENA
 configure_genai(openai_api_key, google_genai_key)
 
 # -----------------------------------------------------------------------------
-# Copy to Clipboard Functionality
-# -----------------------------------------------------------------------------
-def add_copy_button(text: str):
-    """
-    Adds a copy symbol button (📋) to copy the given text to the clipboard.
-    """
-    st.markdown(
-        f"""
-        <textarea id="copyText_{id(text)}" style="position: absolute; left: -9999px;">{text}</textarea>
-        <button onclick="copyToClipboard('copyText_{id(text)}')" style="background: none; border: none; cursor: pointer; font-size: 1.5em;">📋</button>
-        <script>
-            function copyToClipboard(elementId) {{
-                var copyText = document.getElementById(elementId);
-                copyText.select();
-                document.execCommand("copy");
-                alert("Copied to clipboard!");
-            }}
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
-
-# -----------------------------------------------------------------------------
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
@@ -126,10 +103,6 @@ def main():
                 key="editable_refined_prompt"
             )
             st.session_state["refined_prompt"] = editable_refined_prompt  # Update the refined prompt if edited
-
-            # Add Copy Button with Symbol (📋)
-            st.markdown("**Copy Refined Prompt:**")
-            add_copy_button(st.session_state["refined_prompt"])
 
             # Button: Get Final Answer
             if st.button("Submit"):
