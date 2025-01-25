@@ -91,11 +91,13 @@ def main():
                         st.success("Prompt refined successfully!")
 
         # Default Filters
+        st.markdown("### Default Filters")
         default_filter_choices = get_default_filters()
 
         # Display Custom Filters
         user_custom_choices = {}
         if "custom_filters_data" in st.session_state:
+            st.markdown("### Custom Filters")
             custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
             user_custom_choices = display_custom_filters(custom_definitions)
 
