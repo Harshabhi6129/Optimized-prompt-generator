@@ -18,26 +18,6 @@ google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENA
 configure_genai(openai_api_key, google_genai_key)
 
 # -----------------------------------------------------------------------------
-# Custom CSS for Scrollable Boxes with Rounded Corners
-# -----------------------------------------------------------------------------
-st.markdown(
-    """
-    <style>
-    .scrollable-box {
-        height: 80vh; /* Adjust height as needed */
-        overflow-y: auto;
-        padding: 20px; /* Add padding inside the box */
-        border: 1px solid #e0e0e0; /* Add a border */
-        border-radius: 10px; /* Rounded corners */
-        background-color: #f9f9f9; /* Light background color */
-        margin-bottom: 20px; /* Add margin between boxes */
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# -----------------------------------------------------------------------------
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
@@ -46,9 +26,6 @@ def main():
 
     # Left Side: Title, Text Input, Filters
     with col_left:
-        # Add scrollable box
-        st.markdown('<div class="scrollable-box">', unsafe_allow_html=True)
-
         # Title
         st.markdown(
             "<h1 style='text-align: left;'>🔬 AI Prompt Refinement </h1>",
@@ -91,13 +68,11 @@ def main():
                         st.success("Prompt refined successfully!")
 
         # Default Filters
-        st.markdown("### Default Filters")
         default_filter_choices = get_default_filters()
 
         # Display Custom Filters
         user_custom_choices = {}
         if "custom_filters_data" in st.session_state:
-            st.markdown("### Custom Filters")
             custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
             user_custom_choices = display_custom_filters(custom_definitions)
 
@@ -116,14 +91,8 @@ def main():
                     st.session_state["refined_prompt"] = refined_prompt
                     st.success("Prompt refined successfully!")
 
-        # Close scrollable box
-        st.markdown('</div>', unsafe_allow_html=True)
-
     # Right Side: Refined Prompt and Final Output
     with col_right:
-        # Add scrollable box
-        st.markdown('<div class="scrollable-box">', unsafe_allow_html=True)
-
         # Refined Prompt Section
         if "refined_prompt" in st.session_state:
             st.markdown("### 📌 Editable Refined Prompt")
@@ -141,9 +110,6 @@ def main():
                     gpt_response = generate_response_from_chatgpt(st.session_state["refined_prompt"])
                 st.markdown("### 💬 Response")
                 st.write(gpt_response)
-
-        # Close scrollable box
-        st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # Entry Point
