@@ -47,7 +47,7 @@ def get_default_filters() -> dict:
 # Generate Dynamic Filters
 # -----------------------------------------------------------------------------
 def generate_dynamic_filters(naive_prompt: str) -> dict:
-        system_instruction = """
+    system_instruction = """
 IMPORTANT: Output must be strictly valid JSON. Do NOT include code blocks, disclaimers, 
 or additional commentary. No markdown formatting or extra text. 
 
