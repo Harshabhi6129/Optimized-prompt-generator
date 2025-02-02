@@ -39,7 +39,7 @@ def main():
         1. Enter a naive prompt below.  
         2. Click **Generate Custom Filters** or **Refine Prompt Directly**.  
         3. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
-        4. Refined Prompt and Output will appear on the right side.
+        4. The refined prompt and the final output will appear on the right side.
         """)
 
         # Naive Prompt Input
@@ -52,7 +52,7 @@ def main():
                 if not naive_prompt.strip():
                     st.error("Please enter a valid naive prompt.")
                 else:
-                    with st.spinner("Analyzing your prompt to suggest custom filters"):
+                    with st.spinner("Analyzing your prompt to generate high-quality custom filters..."):
                         filters_data = generate_dynamic_filters(naive_prompt)
                         st.session_state["custom_filters_data"] = filters_data
                         st.success("Custom filters generated successfully!")
@@ -62,7 +62,7 @@ def main():
                 if not naive_prompt.strip():
                     st.error("Please enter a valid naive prompt.")
                 else:
-                    with st.spinner("Refining your prompt"):
+                    with st.spinner("Refining your prompt..."):
                         refined_prompt = refine_prompt_with_google_genai(naive_prompt, {})
                         st.session_state["refined_prompt"] = refined_prompt
                         st.success("Prompt refined successfully!")
@@ -70,7 +70,7 @@ def main():
         # Default Filters
         default_filter_choices = get_default_filters()
 
-        # Display Custom Filters
+        # Display Custom Filters (if available)
         user_custom_choices = {}
         if "custom_filters_data" in st.session_state:
             custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
@@ -86,7 +86,7 @@ def main():
                     "Default": default_filter_choices,
                     "Custom": user_custom_choices
                 }
-                with st.spinner("Refining your prompt"):
+                with st.spinner("Refining your prompt using your preferences..."):
                     refined_prompt = refine_prompt_with_google_genai(naive_prompt, all_filters)
                     st.session_state["refined_prompt"] = refined_prompt
                     st.success("Prompt refined successfully!")
@@ -102,11 +102,11 @@ def main():
                 height=120, 
                 key="editable_refined_prompt"
             )
-            st.session_state["refined_prompt"] = editable_refined_prompt  # Update the refined prompt if edited
+            st.session_state["refined_prompt"] = editable_refined_prompt  # Update if user edits the refined prompt
 
             # Button: Get Final Answer
             if st.button("Submit"):
-                with st.spinner("Generating response..."):
+                with st.spinner("Generating final response..."):
                     gpt_response = generate_response_from_chatgpt(st.session_state["refined_prompt"])
                 st.markdown("### 💬 Response")
                 st.write(gpt_response)
