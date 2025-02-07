@@ -11,36 +11,61 @@ logger = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 def get_default_filters() -> dict:
     st.subheader("Default Filters")
-
-    # Preferred Answer Format
-    answer_format = st.radio(
-        "Preferred answer format:",
-        options=["Paragraph", "Bullet Points"],
-        key="default_answer_format"
-    )
-
-    # Preferred Tone of Response
-    tone_of_response = st.radio(
-        "Preferred tone of response:",
-        options=["Formal", "Informal", "Neutral"],
-        key="default_tone_of_response"
-    )
-
-    # Output Detail Level (not the exact number of bullet points)
-    output_detail = st.slider(
-        "Output Detail Level (1 = Summary, 5 = Detailed):",
-        min_value=1,
-        max_value=5,
-        value=3,
-        step=1,
-        format="%d",
-        key="default_output_length"
-    )
-
+    
+    # Group 1: Response Settings
+    with st.expander("Response Settings", expanded=True):
+        answer_format = st.radio(
+            "Preferred Answer Format:",
+            options=["Paragraph", "Bullet Points"],
+            key="default_answer_format"
+        )
+        tone_of_response = st.radio(
+            "Preferred Tone of Response:",
+            options=["Formal", "Informal", "Neutral"],
+            key="default_tone_of_response"
+        )
+        output_detail = st.slider(
+            "Output Detail Level (1 = Summary, 5 = Detailed):",
+            min_value=1,
+            max_value=5,
+            value=3,
+            step=1,
+            key="default_output_detail"
+        )
+        
+    # Group 2: Audience & Purpose
+    with st.expander("Audience & Purpose", expanded=True):
+        audience_level = st.radio(
+            "Intended Audience:",
+            options=["General", "Beginner", "Intermediate", "Expert"],
+            key="default_audience_level"
+        )
+        purpose = st.selectbox(
+            "Primary Purpose of Request:",
+            options=["Learning/Education", "Professional/Work", "Personal Interest", "Research"],
+            key="default_purpose"
+        )
+    
+    # Group 3: Additional Preferences
+    with st.expander("Additional Preferences", expanded=False):
+        include_visuals = st.checkbox(
+            "Include visual aids (charts, diagrams, etc.)",
+            key="default_include_visuals"
+        )
+        response_structure = st.radio(
+            "Preferred Response Structure:",
+            options=["Concise", "Structured with Headings", "Step-by-Step"],
+            key="default_response_structure"
+        )
+    
     return {
         "Answer Format": answer_format,
         "Tone of Response": tone_of_response,
-        "Output Detail": output_detail
+        "Output Detail": output_detail,
+        "Audience Level": audience_level,
+        "Purpose": purpose,
+        "Include Visuals": include_visuals,
+        "Response Structure": response_structure
     }
 
 # -----------------------------------------------------------------------------
