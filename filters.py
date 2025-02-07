@@ -50,7 +50,7 @@ def generate_dynamic_filters(naive_prompt: str) -> dict:
     """
     Uses the Gemini Pro model to generate custom filters that capture maximum insight 
     into what the user wants based on their naive prompt. The returned JSON will include:
-      - Exactly one free–form text input (for the user to describe requirements)
+      - Exactly one free–form text input filter for the user to describe requirements
       - Additional filters as options (radio, checkbox, or selectbox) for structured responses.
     """
     system_instruction = """
@@ -113,11 +113,6 @@ Return a JSON object exactly in the following structure:
     fallback_filters = {
         "custom_filters": [
             {
-                "type": "text_input",
-                "label": "Describe your requirements:",
-                "key": "fallback_free_text"
-            },
-            {
                 "type": "radio",
                 "label": "What level of detail do you require?",
                 "key": "fallback_detail_level",
@@ -128,6 +123,11 @@ Return a JSON object exactly in the following structure:
                 "label": "Which areas are you most interested in?",
                 "key": "fallback_interest_areas",
                 "options": ["Design", "Functionality", "Performance", "Usability"]
+            },
+            {
+                "type": "text_input",
+                "label": "Describe your requirements:",
+                "key": "fallback_free_text"
             }
         ]
     }
@@ -139,10 +139,10 @@ Return a JSON object exactly in the following structure:
 def display_custom_filters(custom_filters: list) -> dict:
     """
     Displays the custom filters on the Streamlit UI.
-    - Ensures that exactly one free-form text input (displayed as a multi-line text area) is shown.
-    - All additional filters are rendered as option–based inputs.
+    - All option-based filters are displayed first, each with an interactive expander heading.
+    - The free-form text input (description box) is displayed last, also within an interactive expander.
     """
-    st.subheader("Custom Input")
+    st.subheader("Custom Filters")
     user_custom_choices = {}
 
     # Separate the free–form text input filter from option–based filters
@@ -150,15 +150,42 @@ def display_custom_filters(custom_filters: list) -> dict:
     option_filters = []
     for filt in custom_filters:
         if filt.get("type") == "text_input":
-            # Only use the first free-form text filter and ignore any extras.
+            # Use the first free–form text filter as the custom description box.
             if free_text_filter is None:
                 free_text_filter = filt
             else:
+                # If additional text inputs exist, treat them as option-based filters.
                 option_filters.append(filt)
         else:
             option_filters.append(filt)
 
-    # If no free-form text filter exists, add a default one.
+    # Display option-based filters first with interactive expanders
+    st.markdown("### Select from the options below:")
+    for filt in option_filters:
+        f_type = filt.get("type", "radio")
+        f_label = filt.get("label", "Filter")
+        f_key = filt.get("key", f"custom_{f_label}")
+        f_options = filt.get("options", [])
+
+        # Create an interactive expander for the filter.
+        with st.expander(f"Filter: {f_label}", expanded=False):
+            if f_type == "checkbox":
+                if not f_options:
+                    user_custom_choices[f_key] = st.checkbox(f_label, key=f_key)
+                else:
+                    # Allow multiple selections if options are provided.
+                    user_custom_choices[f_key] = [
+                        opt for opt in f_options if st.checkbox(opt, key=f"{f_key}_{opt}")
+                    ]
+            elif f_type == "radio":
+                user_custom_choices[f_key] = st.radio(f_label, options=f_options, key=f_key)
+            elif f_type == "selectbox":
+                user_custom_choices[f_key] = st.selectbox(f_label, options=f_options, key=f_key)
+            # Fallback to a single-line text input if needed.
+            elif f_type == "text_input":
+                user_custom_choices[f_key] = st.text_input(f_label, key=f_key)
+
+    # Ensure we have a free-form text filter. If not, add a default one.
     if free_text_filter is None:
         free_text_filter = {
             "type": "text_input",
@@ -166,34 +193,12 @@ def display_custom_filters(custom_filters: list) -> dict:
             "key": "default_custom_text"
         }
 
-    # Use a multi-line text area for free-form input.
-    user_custom_choices[free_text_filter["key"]] = st.text_area(
-        free_text_filter["label"],
-        key=free_text_filter["key"]
-    )
-
-    st.subheader("Additional Options")
-    # Display all additional option–based filters
-    for filt in option_filters:
-        f_type = filt.get("type", "radio")
-        f_label = filt.get("label", "Filter")
-        f_key = filt.get("key", f"custom_{f_label}")
-        f_options = filt.get("options", [])
-
-        if f_type == "checkbox":
-            if not f_options:
-                user_custom_choices[f_key] = st.checkbox(f_label, key=f_key)
-            else:
-                # For checkboxes with options, allow multiple selections.
-                user_custom_choices[f_key] = [
-                    opt for opt in f_options if st.checkbox(opt, key=f"{f_key}_{opt}")
-                ]
-        elif f_type == "radio":
-            user_custom_choices[f_key] = st.radio(f_label, options=f_options, key=f_key)
-        elif f_type == "selectbox":
-            user_custom_choices[f_key] = st.selectbox(f_label, options=f_options, key=f_key)
-        # In the unlikely case a text_input type sneaks in here, display it as a single-line input.
-        elif f_type == "text_input":
-            user_custom_choices[f_key] = st.text_input(f_label, key=f_key)
+    # Display the free-form text input at the end with an interactive expander.
+    st.markdown("### Provide Additional Details")
+    with st.expander(f"Custom Description: {free_text_filter.get('label')}", expanded=True):
+        user_custom_choices[free_text_filter["key"]] = st.text_area(
+            free_text_filter["label"],
+            key=free_text_filter["key"]
+        )
 
     return user_custom_choices
