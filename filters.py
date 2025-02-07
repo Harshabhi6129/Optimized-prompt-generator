@@ -26,9 +26,9 @@ def get_default_filters() -> dict:
         key="default_tone_of_response"
     )
 
-    # Length of Output
-    output_length = st.slider(
-        "Length of output:",
+    # Output Detail Level (not the exact number of bullet points)
+    output_detail = st.slider(
+        "Output Detail Level (1 = Summary, 5 = Detailed):",
         min_value=1,
         max_value=5,
         value=3,
@@ -40,7 +40,7 @@ def get_default_filters() -> dict:
     return {
         "Answer Format": answer_format,
         "Tone of Response": tone_of_response,
-        "Output Length": output_length
+        "Output Detail": output_detail
     }
 
 # -----------------------------------------------------------------------------
