@@ -47,29 +47,29 @@ def get_default_filters() -> dict:
 # Generate Dynamic Custom Filters
 # -----------------------------------------------------------------------------
 def generate_dynamic_filters(naive_prompt: str) -> dict:
+    """
+    Uses the Gemini Pro model to generate custom filters that capture maximum insight 
+    into what the user wants based on their naive prompt. The returned JSON will include:
+      - Exactly one free–form text input (for the user to describe requirements)
+      - Additional filters as options (radio, checkbox, or selectbox) for structured responses.
+    """
     system_instruction = """
 IMPORTANT: Output must be strictly valid JSON with no extra text, markdown, or explanations.
 
 Task:
-You are an expert in extracting user requirements for optimal prompt design. Analyze the following input prompt and generate a set of highly relevant custom filters. These filters should capture details such as:
-- The specific goal or outcome desired.
-- The tone, style, or audience preferences.
-- The level of detail and any technical constraints.
-- Any contextual or domain-specific information.
-
-For each filter, include:
-  - "type": one of "text_input", "checkbox", "radio", or "selectbox"
-  - "label": a clear, concise question to ask the user
-  - "key": a unique identifier for this filter
-  - "options": an array of strings (only for "radio", "checkbox", or "selectbox" types)
+You are an expert in extracting user requirements for optimal prompt design. Analyze the following input prompt and generate a set of highly relevant custom filters that will capture maximum insight into what the user wants. The requirements are as follows:
+- There must be exactly one free-form text input filter for the user to describe their requirements in their own words. Label it clearly (for example, "Describe your requirements:").
+- All additional filters must be option-based (using types "radio", "checkbox", or "selectbox") to help the user select specific details.
+- The filters should capture details such as the specific goal or outcome desired, tone, style, audience preferences, level of detail, technical constraints, and any domain-specific information.
+- Ensure every filter has a unique key and is user-friendly.
 
 Return a JSON object exactly in the following structure:
 {
   "custom_filters": [
     {
       "type": "text_input",
-      "label": "Your question here",
-      "key": "unique_key_here"
+      "label": "Describe your requirements:",
+      "key": "custom_free_text"
     },
     {
       "type": "radio",
@@ -113,15 +113,21 @@ Return a JSON object exactly in the following structure:
     fallback_filters = {
         "custom_filters": [
             {
+                "type": "text_input",
+                "label": "Describe your requirements:",
+                "key": "fallback_free_text"
+            },
+            {
                 "type": "radio",
                 "label": "What level of detail do you require?",
                 "key": "fallback_detail_level",
                 "options": ["Basic", "Intermediate", "Advanced"]
             },
             {
-                "type": "text_input",
-                "label": "Please specify any particular focus area:",
-                "key": "fallback_focus_area"
+                "type": "checkbox",
+                "label": "Which areas are you most interested in?",
+                "key": "fallback_interest_areas",
+                "options": ["Design", "Functionality", "Performance", "Usability"]
             }
         ]
     }
@@ -131,26 +137,63 @@ Return a JSON object exactly in the following structure:
 # Display Custom Filters
 # -----------------------------------------------------------------------------
 def display_custom_filters(custom_filters: list) -> dict:
-    st.subheader("Custom Filters")
+    """
+    Displays the custom filters on the Streamlit UI.
+    - Ensures that exactly one free-form text input (displayed as a multi-line text area) is shown.
+    - All additional filters are rendered as option–based inputs.
+    """
+    st.subheader("Custom Input")
     user_custom_choices = {}
-    for filter_def in custom_filters:
-        f_type = filter_def.get("type", "text_input")
-        f_label = filter_def.get("label", "Filter")
-        f_key = filter_def.get("key", f"custom_{f_label}")
-        f_options = filter_def.get("options", [])
 
-        if f_type == "text_input":
-            user_custom_choices[f_label] = st.text_input(f_label, key=f_key)
-        elif f_type == "checkbox":
-            if not f_options:
-                user_custom_choices[f_label] = st.checkbox(f_label, key=f_key)
+    # Separate the free–form text input filter from option–based filters
+    free_text_filter = None
+    option_filters = []
+    for filt in custom_filters:
+        if filt.get("type") == "text_input":
+            # Only use the first free-form text filter and ignore any extras.
+            if free_text_filter is None:
+                free_text_filter = filt
             else:
-                # Allow multiple selections if options are provided
-                user_custom_choices[f_label] = [
+                option_filters.append(filt)
+        else:
+            option_filters.append(filt)
+
+    # If no free-form text filter exists, add a default one.
+    if free_text_filter is None:
+        free_text_filter = {
+            "type": "text_input",
+            "label": "Describe your requirements:",
+            "key": "default_custom_text"
+        }
+
+    # Use a multi-line text area for free-form input.
+    user_custom_choices[free_text_filter["key"]] = st.text_area(
+        free_text_filter["label"],
+        key=free_text_filter["key"]
+    )
+
+    st.subheader("Additional Options")
+    # Display all additional option–based filters
+    for filt in option_filters:
+        f_type = filt.get("type", "radio")
+        f_label = filt.get("label", "Filter")
+        f_key = filt.get("key", f"custom_{f_label}")
+        f_options = filt.get("options", [])
+
+        if f_type == "checkbox":
+            if not f_options:
+                user_custom_choices[f_key] = st.checkbox(f_label, key=f_key)
+            else:
+                # For checkboxes with options, allow multiple selections.
+                user_custom_choices[f_key] = [
                     opt for opt in f_options if st.checkbox(opt, key=f"{f_key}_{opt}")
                 ]
         elif f_type == "radio":
-            user_custom_choices[f_label] = st.radio(f_label, options=f_options, key=f_key)
+            user_custom_choices[f_key] = st.radio(f_label, options=f_options, key=f_key)
         elif f_type == "selectbox":
-            user_custom_choices[f_label] = st.selectbox(f_label, options=f_options, key=f_key)
+            user_custom_choices[f_key] = st.selectbox(f_label, options=f_options, key=f_key)
+        # In the unlikely case a text_input type sneaks in here, display it as a single-line input.
+        elif f_type == "text_input":
+            user_custom_choices[f_key] = st.text_input(f_label, key=f_key)
+
     return user_custom_choices
