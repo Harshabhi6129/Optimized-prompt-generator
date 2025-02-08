@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 import openai
 import time
-import markdown  # For converting markdown text to HTML
 
 from filters import get_default_filters, generate_dynamic_filters, display_custom_filters
 from prompt_refinement import refine_prompt_with_google_genai
@@ -28,7 +27,7 @@ else:
 configure_genai(openai_api_key, google_genai_key)
 
 # -----------------------------------------------------------------------------
-# Inject Custom CSS for the Overall Layout
+# Inject Custom CSS
 # -----------------------------------------------------------------------------
 st.markdown(
     """
@@ -114,6 +113,7 @@ def main():
                     st.success("Prompt refined successfully!")
 
         default_filters = get_default_filters()
+
         custom_choices = {}
         if "custom_filters_data" in st.session_state:
             custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
@@ -157,6 +157,7 @@ def main():
                                 gpt_response = generate_response_from_chatgpt(final_prompt)
                                 success = True
                             except Exception as e:
+                                # Retry if error message contains "502"
                                 if "502" in str(e):
                                     retries += 1
                                     time.sleep(2)
@@ -164,22 +165,15 @@ def main():
                                     st.error(f"Error generating response: {e}")
                                     break
                         if success:
-                            # Remove an initial markdown header if present
-                            final_response_clean = gpt_response
-                            lines = final_response_clean.splitlines()
-                            if lines and lines[0].lstrip().startswith('#'):
-                                lines.pop(0)
-                            final_response_clean = "\n".join(lines).strip()
-                            # Convert the cleaned markdown to HTML
-                            final_response_html = markdown.markdown(final_response_clean)
                             st.markdown("### 💬 Response")
-                            # Wrap the formatted answer in a styled div container
-                            final_html = f"""
-                            <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
-                                {final_response_html}
-                            </div>
-                            """
-                            st.markdown(final_html, unsafe_allow_html=True)
+                            st.markdown(
+                                f"""
+                                <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
+                                    {gpt_response}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
                         else:
                             st.error("Failed to generate response after multiple attempts.")
         else:
