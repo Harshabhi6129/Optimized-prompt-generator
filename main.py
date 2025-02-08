@@ -169,7 +169,7 @@ def main():
                             st.markdown(
                                 f"""
                                 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
-                                    {gpt_response}
+                                    ### {gpt_response}
                                 </div>
                                 """,
                                 unsafe_allow_html=True
