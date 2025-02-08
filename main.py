@@ -174,12 +174,6 @@ def main():
                                 else:
                                     st.error(f"Error generating response: {e}")
                                     break
-                        '''if success:
-                            st.markdown("### 💬 Response")
-                            st.markdown(gpt_response)  # Render the response directly as Markdown
-                        else:
-                            st.error("Failed to generate response after multiple attempts.")'''
-
                         if success:
                             st.markdown("### 💬 Response")
                             f"""
