@@ -23,33 +23,35 @@ configure_genai(openai_api_key, google_genai_key)
 st.markdown(
     """
     <style>
-    /* Ensure the overall page occupies the full viewport and prevent overall scrolling */
+    /* Make sure the entire page fills the viewport without overall scrolling */
     html, body {
       height: 100vh;
       margin: 0;
       padding: 0;
       overflow: hidden;
     }
-    /* Remove default padding from Streamlit's main container */
+    /* Remove default padding/margins from Streamlit’s main container and force full width/height */
     [data-testid="stAppViewContainer"] {
       padding: 0;
       margin: 0;
+      width: 100%;
+      height: 100vh;
     }
-    /* Remove any margins/padding from the horizontal block container */
+    /* Ensure the horizontal block (columns container) spans full width */
     div[data-testid="stHorizontalBlock"] {
       margin: 0;
       padding: 0;
+      width: 100%;
     }
     /* Style the left and right column containers:
-       - Full height (100vh) for container-only scrolling.
-       - 10px padding.
-       - Rounded edges.
-       - Border.
+       - They fill the available height (viewport height minus the title’s height).
+       - They have a border, rounded edges, and internal padding.
+       - Only these divs scroll if content overflows.
     */
     div[data-testid="stHorizontalBlock"] > div:nth-child(1),
     div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
          border: 1px solid #ccc;
-         height: 100vh;
+         height: calc(100vh - 80px); /* Adjust 80px if your title takes more or less space */
          overflow-y: auto;
          padding: 10px;
          box-sizing: border-box;
@@ -62,32 +64,33 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
+# Title (Outside of the bordered, scrollable divs)
+# -----------------------------------------------------------------------------
+st.markdown(
+    "<h1 style='text-align: center; margin: 10px 0;'>🔬 AI Prompt Refinement</h1>",
+    unsafe_allow_html=True
+)
+
+# -----------------------------------------------------------------------------
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Create two main columns; they will fill the width (no extra page margins)
+    # Create two main columns for content that stretch the full width of the page
     col_left, col_right = st.columns([2, 3])
-
+    
     # -----------------------
-    # Left Side: Inputs & Filters
+    # Left Column: Inputs & Filters
     # -----------------------
     with col_left:
         st.markdown(
-            "<h1 style='text-align: left;'>🔬 AI Prompt Refinement</h1>",
-            unsafe_allow_html=True
-        )
-        st.write("")  # Vertical spacing
-
-        st.markdown(
             """
-            **Instructions**  
+            **Instructions:**  
             1. Enter a naive prompt below.  
             2. Click **Generate Custom Filters** or **Refine Prompt Directly**.  
             3. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
             4. The refined prompt and the final output will appear on the right side.
             """
         )
-
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120)
 
         # Button: Generate Custom Filters
@@ -132,9 +135,9 @@ def main():
                     refined_prompt = refine_prompt_with_google_genai(naive_prompt, all_filters)
                     st.session_state["refined_prompt"] = refined_prompt
                     st.success("Prompt refined successfully!")
-
+    
     # -----------------------
-    # Right Side: Refined Prompt & Final Output
+    # Right Column: Refined Prompt & Output
     # -----------------------
     with col_right:
         if "refined_prompt" in st.session_state:
@@ -145,8 +148,7 @@ def main():
                 height=120,
                 key="editable_refined_prompt"
             )
-            # Update session state if the user edits the refined prompt
-            st.session_state["refined_prompt"] = editable_refined_prompt
+            st.session_state["refined_prompt"] = editable_refined_prompt  # Update the session state if edited
 
             # Button: Get Final Answer
             if st.button("Submit"):
