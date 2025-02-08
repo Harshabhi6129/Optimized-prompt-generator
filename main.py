@@ -32,7 +32,7 @@ configure_genai(openai_api_key, google_genai_key)
 st.markdown(
     """
     <style>
-    /* Ensure the entire page fits within the viewport and prevent scrolling */
+    /* Ensure the entire page fits within the viewport and disable scrolling */
     html, body {
         height: 100vh;
         margin: 0;
@@ -52,7 +52,7 @@ st.markdown(
         margin: 0;
         padding: 0;
         width: 100%;
-        height: calc(100vh - 80px); /* Subtract height for header, if any */
+        height: 100%; /* Occupy the full height of the viewport */
         display: flex; /* Arrange columns horizontally */
         flex-direction: row; /* Side-by-side layout */
     }
