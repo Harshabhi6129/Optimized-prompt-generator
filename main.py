@@ -167,7 +167,7 @@ def main():
                         if success:
                             st.markdown("### 💬 Response")
                             st.markdown(
-                                f"""###
+                                f"""
                                 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
                                     {gpt_response}
                                 </div>
