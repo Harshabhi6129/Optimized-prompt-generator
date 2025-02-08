@@ -1,8 +1,44 @@
 import logging
 from model_loader import load_gemini_pro
 import streamlit as st
+import subprocess
+import os
 
 logger = logging.getLogger(__name__)
+
+def refine_prompt_with_stableprompt(naive_prompt: str, user_choices: dict) -> str:
+    """
+    Refines the prompt using StablePrompt after custom filters are applied.
+    """
+    # Prepare user preferences
+    user_preferences_text = ""
+    if user_choices:
+        for section_label, prefs in user_choices.items():
+            if prefs:
+                user_preferences_text += f"\n[{section_label}]\n"
+                for key, value in prefs.items():
+                    user_preferences_text += f"{key}: {value}\n"
+
+    # Save the naive prompt and preferences to a temporary file
+    input_file = "input_prompt.txt"
+    with open(input_file, "w") as f:
+        f.write(f"Naive Prompt: {naive_prompt}\n")
+        f.write(f"User Preferences: {user_preferences_text}")
+
+    # Run StablePrompt training script
+    try:
+        result = subprocess.run(
+            ["python", "Stableprompt/train.py", "--input", input_file],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        logger.info(f"StablePrompt Output: {result.stdout}")
+        refined_prompt = result.stdout.strip()
+        return refined_prompt  # Assume StablePrompt returns the refined prompt as plain text
+    except subprocess.CalledProcessError as e:
+        logger.error(f"StablePrompt failed: {e.stderr}")
+        raise Exception("StablePrompt refinement failed.")
 
 def refine_prompt_with_google_genai(naive_prompt: str, user_choices: dict) -> str:
     refinement_instruction = """
