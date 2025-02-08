@@ -9,6 +9,7 @@ import os
 # -----------------------------------------------------------------------------
 # Streamlit Setup
 # -----------------------------------------------------------------------------
+st.set_page_config(page_title="GPT-4o Advanced Prompt Refinement", layout="wide")
 st.markdown(
     """
     <style>
@@ -25,7 +26,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.set_page_config(page_title="GPT-4o Advanced Prompt Refinement", layout="wide")
+
 load_dotenv()
 
 # Configure Generative AI
