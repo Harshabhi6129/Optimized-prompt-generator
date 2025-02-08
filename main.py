@@ -176,15 +176,25 @@ def main():
                                     break
                         if success:
                             st.markdown("### 💬 Response")
-                            f"""
-                                <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
-                                    {st.markdown(gpt_response)}
-                                </div>
-                            """,
+                            st.markdown("""<div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;"> 
+                            {gpt_response}
+                            </div>"""),
                             unsafe_allow_html=True
-                            
                         else:
                             st.error("Failed to generate response after multiple attempts.")
+
+                        #if success:
+                            #st.markdown("### 💬 Response")
+                            #st.markdown(gpt_response)
+                            #f"""
+                              #  <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
+                              #      {st.markdown(gpt_response)}
+                              #  </div>
+                           # """,
+                           # unsafe_allow_html=True
+                            
+                      #  else:
+                      #      st.error("Failed to generate response after multiple attempts.")
         else:
             st.info("Your refined prompt will appear here once generated.")
 
