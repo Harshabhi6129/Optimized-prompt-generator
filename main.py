@@ -184,7 +184,7 @@ def main():
                             st.markdown("### 💬 Response")
                             f"""
                                 <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
-                                    {st.markdown(gpt_response}
+                                    {st.markdown(gpt_response)}
                                 </div>
                             """,
                                 unsafe_allow_html=True
