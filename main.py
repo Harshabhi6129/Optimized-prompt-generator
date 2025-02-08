@@ -188,7 +188,7 @@ def main():
                                 </div>
                             """,
                             unsafe_allow_html=True
-                            )
+                            
                         else:
                             st.error("Failed to generate response after multiple attempts.")
         else:
