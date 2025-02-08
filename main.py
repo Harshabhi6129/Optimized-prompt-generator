@@ -9,6 +9,22 @@ import os
 # -----------------------------------------------------------------------------
 # Streamlit Setup
 # -----------------------------------------------------------------------------
+st.markdown(
+    """
+    <style>
+    /* Container for each column */
+    .scrollable-column {
+        border: 1px solid #ccc;   /* Light gray border */
+        padding: 10px;
+        height: 90vh;             /* Adjust the height as needed */
+        overflow-y: auto;         /* Enable vertical scrolling */
+        box-sizing: border-box;   /* Ensure padding is included in the height */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.set_page_config(page_title="GPT-4o Advanced Prompt Refinement", layout="wide")
 load_dotenv()
 
@@ -27,6 +43,7 @@ def main():
     # Left Side: Title, Text Input, Filters
     with col_left:
         # Title
+        st.markdown('<div class="scrollable-column">', unsafe_allow_html=True)
         st.markdown(
             "<h1 style='text-align: left;'>🔬 AI Prompt Refinement </h1>",
             unsafe_allow_html=True
@@ -90,10 +107,12 @@ def main():
                     refined_prompt = refine_prompt_with_google_genai(naive_prompt, all_filters)
                     st.session_state["refined_prompt"] = refined_prompt
                     st.success("Prompt refined successfully!")
-
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     # Right Side: Refined Prompt and Final Output
     with col_right:
         # Refined Prompt Section
+        st.markdown('<div class="scrollable-column">', unsafe_allow_html=True)
         if "refined_prompt" in st.session_state:
             st.markdown("### 📌 Editable Refined Prompt")
             editable_refined_prompt = st.text_area(
@@ -110,7 +129,7 @@ def main():
                     gpt_response = generate_response_from_chatgpt(st.session_state["refined_prompt"])
                 st.markdown("### 💬 Response")
                 st.write(gpt_response)
-
+        st.markdown('</div>', unsafe_allow_html=True)
 # -----------------------------------------------------------------------------
 # Entry Point
 # -----------------------------------------------------------------------------
