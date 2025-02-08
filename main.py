@@ -164,7 +164,12 @@ def main():
                                 else:
                                     st.error(f"Error generating response: {e}")
                                     break
+                        
                         if success:
+                        # Remove the leading '#' from the first line of the response, if present
+                            if gpt_response.startswith("# "):
+                                gpt_response = gpt_response[2:]  # Remove the "# " at the beginning
+
                             st.markdown("### 💬 Response")
                             st.markdown(
                                 f"""
