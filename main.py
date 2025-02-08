@@ -132,7 +132,7 @@ def main():
                     st.success("Prompt refined successfully!")
     
     # -----------------------
-    # Right Column: Refined Prompt & Output
+    # Right Column: Refined Prompt & Final Response
     # -----------------------
     with col_right:
         refined_text = st.session_state.get("refined_prompt", "")
@@ -155,7 +155,14 @@ def main():
                         try:
                             gpt_response = generate_response_from_chatgpt(final_prompt)
                             st.markdown("### 💬 Response")
-                            st.write(gpt_response)
+                            st.markdown(
+                                f"""
+                                <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
+                                    {gpt_response}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
                         except Exception as e:
                             st.error(f"Error generating response: {e}")
         else:
