@@ -23,7 +23,7 @@ configure_genai(openai_api_key, google_genai_key)
 st.markdown(
     """
     <style>
-    /* Make sure the entire page fills the viewport without overall scrolling */
+    /* Ensure the entire page fills the viewport without overall scrolling */
     html, body {
       height: 100vh;
       margin: 0;
@@ -43,11 +43,7 @@ st.markdown(
       padding: 0;
       width: 100%;
     }
-    /* Style the left and right column containers:
-       - They fill the available height (viewport height minus the title’s height).
-       - They have a border, rounded edges, and internal padding.
-       - Only these divs scroll if content overflows.
-    */
+    /* Style the left and right column containers */
     div[data-testid="stHorizontalBlock"] > div:nth-child(1),
     div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
          border: 1px solid #ccc;
@@ -94,7 +90,7 @@ def main():
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120)
 
         # Button: Generate Custom Filters
-        if st.button("Generate Custom Filters"):
+        if st.button("Generate Custom Filters", key="gen_custom_filters"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
             else:
@@ -104,7 +100,7 @@ def main():
                     st.success("Custom filters generated successfully!")
 
         # Button: Refine Prompt Directly
-        if st.button("Refine Prompt Directly"):
+        if st.button("Refine Prompt Directly", key="refine_directly"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
             else:
@@ -123,7 +119,7 @@ def main():
             user_custom_choices = display_custom_filters(custom_definitions)
 
         # Button: Refine Prompt with Filters
-        if st.button("Refine Prompt with Filters"):
+        if st.button("Refine Prompt with Filters", key="refine_with_filters"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
             else:
@@ -140,22 +136,31 @@ def main():
     # Right Column: Refined Prompt & Output
     # -----------------------
     with col_right:
-        if "refined_prompt" in st.session_state:
+        # Use a default empty string if the refined prompt is not yet generated.
+        refined_prompt_value = st.session_state.get("refined_prompt", "")
+        if refined_prompt_value:
             st.markdown("### 📌 Editable Refined Prompt")
+            # Allow the user to edit the refined prompt.
             editable_refined_prompt = st.text_area(
                 "Refined Prompt (Editable)",
-                st.session_state["refined_prompt"],
+                refined_prompt_value,
                 height=120,
                 key="editable_refined_prompt"
             )
-            st.session_state["refined_prompt"] = editable_refined_prompt  # Update the session state if edited
+            # Update the session state if the user edits the prompt.
+            st.session_state["refined_prompt"] = editable_refined_prompt
 
             # Button: Get Final Answer
-            if st.button("Submit"):
-                with st.spinner("Generating final response..."):
-                    gpt_response = generate_response_from_chatgpt(st.session_state["refined_prompt"])
-                st.markdown("### 💬 Response")
-                st.write(gpt_response)
+            if st.button("Submit", key="submit_final"):
+                if not st.session_state["refined_prompt"].strip():
+                    st.error("Refined prompt is empty. Please refine the prompt before submitting.")
+                else:
+                    with st.spinner("Generating final response..."):
+                        gpt_response = generate_response_from_chatgpt(st.session_state["refined_prompt"])
+                    st.markdown("### 💬 Response")
+                    st.write(gpt_response)
+        else:
+            st.info("Your refined prompt will appear here once generated.")
 
 # -----------------------------------------------------------------------------
 # Entry Point
