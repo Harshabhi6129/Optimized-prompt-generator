@@ -104,28 +104,23 @@ def main():
         )
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120, key="naive_prompt")
 
-        # Add buttons side by side
-        button_col1, button_col2 = st.columns(2)
+        if st.button("Generate Custom Filters", key="gen_custom_filters"):
+            if not naive_prompt.strip():
+                st.error("Please enter a valid naive prompt.")
+            else:
+                with st.spinner("Analyzing your prompt to generate high-quality custom filters..."):
+                    filters_data = generate_dynamic_filters(naive_prompt)
+                    st.session_state["custom_filters_data"] = filters_data
+                    st.success("Custom filters generated successfully!")
 
-        with button_col1:
-            if st.button("Generate Custom Filters", key="gen_custom_filters"):
-                if not naive_prompt.strip():
-                    st.error("Please enter a valid naive prompt.")
-                else:
-                    with st.spinner("Analyzing your prompt to generate high-quality custom filters..."):
-                        filters_data = generate_dynamic_filters(naive_prompt)
-                        st.session_state["custom_filters_data"] = filters_data
-                        st.success("Custom filters generated successfully!")
-
-        with button_col2:
-            if st.button("Refine Prompt Directly", key="refine_directly"):
-                if not naive_prompt.strip():
-                    st.error("Please enter a valid naive prompt.")
-                else:
-                    with st.spinner("Refining your prompt..."):
-                        refined = refine_prompt_with_google_genai(naive_prompt, {})
-                        st.session_state["refined_prompt"] = refined
-                        st.success("Prompt refined successfully!")
+        if st.button("Refine Prompt Directly", key="refine_directly"):
+            if not naive_prompt.strip():
+                st.error("Please enter a valid naive prompt.")
+            else:
+                with st.spinner("Refining your prompt..."):
+                    refined = refine_prompt_with_google_genai(naive_prompt, {})
+                    st.session_state["refined_prompt"] = refined
+                    st.success("Prompt refined successfully!")
 
         default_filters = get_default_filters()
 
