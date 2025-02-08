@@ -36,24 +36,30 @@ st.markdown(
       height: 100vh;
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow: hidden; /* Disable scrolling for the page */
     }
     [data-testid="stAppViewContainer"] {
       padding: 0;
       margin: 0;
       width: 100%;
-      height: 100vh;
+      height: 100vh; /* Full viewport height */
+      display: flex;
+      flex-direction: column; /* Ensure vertical alignment of components */
     }
     div[data-testid="stHorizontalBlock"] {
       margin: 0;
       padding: 0;
       width: 100%;
+      height: 100%; /* Occupy the full height of the viewport */
+      display: flex; /* Set horizontal layout for the two columns */
+      flex-direction: row; /* Arrange columns side by side */
     }
     div[data-testid="stHorizontalBlock"] > div:nth-child(1),
     div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
          border: 1px solid #ccc;
-         height: calc(100vh - 80px);
-         overflow-y: auto;
+         height: 100%; /* Columns take the full height */
+         flex: 1; /* Ensure both columns take equal width */
+         overflow-y: auto; /* Allow independent vertical scrolling in each column */
          padding: 10px;
          box-sizing: border-box;
          border-radius: 10px;
