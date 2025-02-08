@@ -187,7 +187,7 @@ def main():
                                     {st.markdown(gpt_response)}
                                 </div>
                             """,
-                                unsafe_allow_html=True
+                            unsafe_allow_html=True
                             )
                         else:
                             st.error("Failed to generate response after multiple attempts.")
