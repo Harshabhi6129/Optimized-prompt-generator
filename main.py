@@ -93,7 +93,7 @@ def main():
     # Left Column: Inputs & Filters
     # -----------------------
     with col_left:
-        st.markdown(
+        '''st.markdown(
             """
             **Instructions:**  
             1. Enter a naive prompt below.  
@@ -101,7 +101,7 @@ def main():
             3. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
             4. The refined prompt and the final output will appear on the right side.
             """
-        )
+        )'''
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120, key="naive_prompt")
 
         if st.button("Generate Custom Filters", key="gen_custom_filters"):
