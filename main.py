@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-import openai  # Import openai so we can explicitly set its API key
+import openai
 
 from filters import get_default_filters, generate_dynamic_filters, display_custom_filters
 from prompt_refinement import refine_prompt_with_google_genai
@@ -14,17 +14,15 @@ from model_loader import configure_genai
 st.set_page_config(page_title="GPT-4o Advanced Prompt Refinement", layout="wide")
 load_dotenv()
 
-# Retrieve API keys from st.secrets or environment variables
+# Retrieve API keys from secrets or environment variables
 openai_api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
 google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENAI_API_KEY"))
 
-if not openai_api_key:
-    st.error("OpenAI API key not provided. Please set OPENAI_API_KEY in your secrets or environment variables.")
-else:
-    # Explicitly set the API key for the openai module.
+if openai_api_key:
     openai.api_key = openai_api_key
+else:
+    st.error("OpenAI API key not provided. Please set OPENAI_API_KEY in your secrets or environment variables.")
 
-# Configure Generative AI (ensure your configure_genai uses the keys correctly)
 configure_genai(openai_api_key, google_genai_key)
 
 # -----------------------------------------------------------------------------
@@ -33,31 +31,27 @@ configure_genai(openai_api_key, google_genai_key)
 st.markdown(
     """
     <style>
-    /* Ensure the entire page fills the viewport without overall scrolling */
     html, body {
       height: 100vh;
       margin: 0;
       padding: 0;
       overflow: hidden;
     }
-    /* Remove default padding/margins from Streamlit’s main container and force full width/height */
     [data-testid="stAppViewContainer"] {
       padding: 0;
       margin: 0;
       width: 100%;
       height: 100vh;
     }
-    /* Ensure the horizontal block (columns container) spans full width */
     div[data-testid="stHorizontalBlock"] {
       margin: 0;
       padding: 0;
       width: 100%;
     }
-    /* Style the left and right column containers */
     div[data-testid="stHorizontalBlock"] > div:nth-child(1),
     div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
          border: 1px solid #ccc;
-         height: calc(100vh - 80px); /* Adjust if needed */
+         height: calc(100vh - 80px);
          overflow-y: auto;
          padding: 10px;
          box-sizing: border-box;
@@ -81,7 +75,7 @@ st.markdown(
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Create two main columns for content that stretch the full width of the page
+    # Create two main columns for the layout
     col_left, col_right = st.columns([2, 3])
     
     # -----------------------
@@ -99,7 +93,6 @@ def main():
         )
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120, key="naive_prompt")
 
-        # Button: Generate Custom Filters
         if st.button("Generate Custom Filters", key="gen_custom_filters"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
@@ -109,7 +102,6 @@ def main():
                     st.session_state["custom_filters_data"] = filters_data
                     st.success("Custom filters generated successfully!")
 
-        # Button: Refine Prompt Directly
         if st.button("Refine Prompt Directly", key="refine_directly"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
@@ -119,16 +111,13 @@ def main():
                     st.session_state["refined_prompt"] = refined
                     st.success("Prompt refined successfully!")
 
-        # Default Filters
         default_filters = get_default_filters()
 
-        # Display Custom Filters (if available)
         custom_choices = {}
         if "custom_filters_data" in st.session_state:
             custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
             custom_choices = display_custom_filters(custom_definitions)
 
-        # Button: Refine Prompt with Filters
         if st.button("Refine Prompt with Filters", key="refine_with_filters"):
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
@@ -149,24 +138,19 @@ def main():
         refined_text = st.session_state.get("refined_prompt", "")
         if refined_text:
             st.markdown("### 📌 Editable Refined Prompt")
-            # Allow the user to edit the refined prompt
             editable_prompt = st.text_area(
                 "Refined Prompt (Editable)",
                 refined_text,
                 height=120,
                 key="editable_refined_prompt"
             )
-            # Update the session state with any edits
             st.session_state["refined_prompt"] = editable_prompt
 
-            # Button: Get Final Answer
             if st.button("Submit", key="submit_final"):
                 final_prompt = st.session_state.get("refined_prompt", "").strip()
                 if not final_prompt:
                     st.error("Refined prompt is empty. Please refine the prompt before submitting.")
                 else:
-                    # Debug: print out the prompt being submitted
-                    st.write("**DEBUG:** Final prompt submitted:", final_prompt)
                     with st.spinner("Generating final response..."):
                         try:
                             gpt_response = generate_response_from_chatgpt(final_prompt)
