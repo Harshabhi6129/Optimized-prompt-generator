@@ -138,7 +138,20 @@ def main():
                     refined = refine_prompt_with_google_genai(naive_prompt, filters_all)
                     st.session_state["refined_prompt"] = refined
                     st.success("Prompt refined successfully!")
-    
+        
+        if st.button("Refine Prompt with StablePrompt", key="refine_with_stableprompt"):
+            if not naive_prompt.strip():
+                st.error("Please enter a valid naive prompt.")
+            else:
+                filters_all = {"Default": default_filters, "Custom": custom_choices}
+                with st.spinner("Refining your prompt using StablePrompt..."):
+                    try:
+                        refined_with_stableprompt = refine_prompt_with_stableprompt(naive_prompt, filters_all)
+                        st.session_state["refined_prompt"] = refined_with_stableprompt
+                        st.success("Prompt refined successfully using StablePrompt!")
+                    except Exception as e:
+                        st.error(f"StablePrompt Refinement Error: {e}")
+
     # -----------------------
     # Right Column: Refined Prompt & Final Response
     # -----------------------
