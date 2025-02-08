@@ -165,11 +165,16 @@ def main():
                                     st.error(f"Error generating response: {e}")
                                     break
                         if success:
+                            # Remove any markdown heading from the first line.
+                            final_response_clean = gpt_response
+                            lines = final_response_clean.splitlines()
+                            if lines and lines[0].startswith('#'):
+                                final_response_clean = "\n".join(lines[1:]).strip()
                             st.markdown("### 💬 Response")
                             st.markdown(
                                 f"""
-                                <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px;">
-                                    {gpt_response}
+                                <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 10px; white-space: pre-wrap;">
+                                    {final_response_clean}
                                 </div>
                                 """,
                                 unsafe_allow_html=True
