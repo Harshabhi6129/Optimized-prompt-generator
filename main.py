@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 import openai
+import time
 
 from filters import get_default_filters, generate_dynamic_filters, display_custom_filters
 from prompt_refinement import refine_prompt_with_google_genai
@@ -122,10 +123,7 @@ def main():
             if not naive_prompt.strip():
                 st.error("Please enter a valid naive prompt.")
             else:
-                filters_all = {
-                    "Default": default_filters,
-                    "Custom": custom_choices
-                }
+                filters_all = {"Default": default_filters, "Custom": custom_choices}
                 with st.spinner("Refining your prompt using your preferences..."):
                     refined = refine_prompt_with_google_genai(naive_prompt, filters_all)
                     st.session_state["refined_prompt"] = refined
@@ -152,8 +150,21 @@ def main():
                     st.error("Refined prompt is empty. Please refine the prompt before submitting.")
                 else:
                     with st.spinner("Generating final response..."):
-                        try:
-                            gpt_response = generate_response_from_chatgpt(final_prompt)
+                        retries = 0
+                        success = False
+                        while retries < 3 and not success:
+                            try:
+                                gpt_response = generate_response_from_chatgpt(final_prompt)
+                                success = True
+                            except Exception as e:
+                                # Retry if error message contains "502"
+                                if "502" in str(e):
+                                    retries += 1
+                                    time.sleep(2)
+                                else:
+                                    st.error(f"Error generating response: {e}")
+                                    break
+                        if success:
                             st.markdown("### 💬 Response")
                             st.markdown(
                                 f"""
@@ -163,8 +174,8 @@ def main():
                                 """,
                                 unsafe_allow_html=True
                             )
-                        except Exception as e:
-                            st.error(f"Error generating response: {e}")
+                        else:
+                            st.error("Failed to generate response after multiple attempts.")
         else:
             st.info("Your refined prompt will appear here once generated.")
 
