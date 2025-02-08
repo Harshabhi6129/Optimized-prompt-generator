@@ -9,4 +9,8 @@ Markdown==3.4.1
 torch
 transformers
 numpy
-
+datasets
+trl
+peft
+wandb
+sentencepiece
