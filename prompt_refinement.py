@@ -19,14 +19,15 @@ def refine_prompt_with_stableprompt(naive_prompt: str, user_choices: dict) -> st
                 for key, value in prefs.items():
                     user_preferences_text += f"{key}: {value}\n"
 
-    # Save the naive prompt and preferences to a temporary file
+    # Save input prompt to a temporary file
     input_file = "input_prompt.txt"
     with open(input_file, "w") as f:
         f.write(f"Naive Prompt: {naive_prompt}\n")
         f.write(f"User Preferences: {user_preferences_text}")
 
-    # Run StablePrompt training script
+    # Run StablePrompt script
     try:
+        logger.info(f"Running StablePrompt with input file: {input_file}")
         result = subprocess.run(
             ["python", "Stableprompt/train.py", "--input", input_file],
             capture_output=True,
@@ -34,11 +35,10 @@ def refine_prompt_with_stableprompt(naive_prompt: str, user_choices: dict) -> st
             check=True
         )
         logger.info(f"StablePrompt Output: {result.stdout}")
-        refined_prompt = result.stdout.strip()
-        return refined_prompt  # Assume StablePrompt returns the refined prompt as plain text
+        return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        logger.error(f"StablePrompt failed: {e.stderr}")
-        raise Exception("StablePrompt refinement failed.")
+        logger.error(f"StablePrompt Error: {e.stderr}")
+        raise Exception(f"StablePrompt failed with error: {e.stderr}")
 
 def refine_prompt_with_google_genai(naive_prompt: str, user_choices: dict) -> str:
     refinement_instruction = """
