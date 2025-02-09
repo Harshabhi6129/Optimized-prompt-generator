@@ -29,7 +29,7 @@ def refine_prompt_with_stableprompt(naive_prompt: str, user_choices: dict) -> st
     try:
         logger.info(f"Running StablePrompt with input file: {input_file}")
         result = subprocess.run(
-            ["python", "Stableprompt-main/train.py", "--input", input_file],
+            ["python", "Stableprompt-main/tte_stableprompt.py", "--input", input_file],
             capture_output=True,
             text=True,
             check=True
