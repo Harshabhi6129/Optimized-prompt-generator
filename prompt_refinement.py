@@ -29,7 +29,7 @@ Return only the refined prompt.
     model = load_gemini_pro("gemini-1.5-flash")
     if not model:
         raise Exception("Gemini Pro model not loaded successfully.")
-    response = model.generate_content(full_prompt)
+    response = model.generate_content(full_prompt, timeout=120)
     refined_text = response.text.strip()
     logger.info(f"Refined prompt: {refined_text}")
     return refined_text
