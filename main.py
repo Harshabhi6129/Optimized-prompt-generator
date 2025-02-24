@@ -127,7 +127,7 @@ st.markdown(
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Initialize chat_history if not present
+    # Ensure chat_history exists in session_state
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
     
@@ -243,13 +243,15 @@ def main():
                 chat_html += f"<div class='ai-message'>{message['content']}</div>"
         chat_container.markdown(chat_html, unsafe_allow_html=True)
         
-        # Function to send a chat message and update chat history immediately
+        # Function to send a chat message and update chat history
         def send_message():
             if st.session_state.chat_input.strip():
+                # 1) Append user message
                 st.session_state.chat_history.append({
                     "role": "user",
                     "content": st.session_state.chat_input
                 })
+                # 2) Generate AI response
                 try:
                     gpt_response = generate_response_from_chatgpt(st.session_state.chat_input)
                     st.session_state.chat_history.append({
@@ -261,14 +263,14 @@ def main():
                         "role": "ai",
                         "content": f"Error: {e}"
                     })
+                # 3) Clear the text box (no st.experimental_rerun needed)
                 st.session_state.chat_input = ""
-                st.experimental_rerun()
         
-        # Chat input and "Send" button (using on_click callback for immediate update)
+        # Chat input and "Send" button (no st.experimental_rerun to avoid warnings)
         st.text_input("Type your message...", key="chat_input")
         st.button("Send", on_click=send_message, key="chat_send")
         
-        # Rebuild chat container HTML after sending a message
+        # Rebuild chat container HTML after the message is sent
         updated_chat_html = ""
         for message in st.session_state.chat_history:
             if message["role"] == "user":
