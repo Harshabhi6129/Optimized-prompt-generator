@@ -3,11 +3,12 @@ import os
 from dotenv import load_dotenv
 import openai
 import time
-
 from filters import get_default_filters, generate_dynamic_filters, display_custom_filters
 from prompt_refinement import refine_prompt_with_google_genai
 from gpt4o_response import generate_response_from_chatgpt
 from model_loader import configure_genai
+from PIL import Image
+import PyPDF2
 
 # -----------------------------------------------------------------------------
 # Streamlit Setup
@@ -32,36 +33,33 @@ configure_genai(openai_api_key, google_genai_key)
 st.markdown(
     """
     <style>
-    /* Ensure the entire page fits within the viewport and prevent scrolling */
     html, body {
         height: 100vh;
         margin: 0;
         padding: 0;
-        overflow: hidden; /* Disable page scrolling */
+        overflow: hidden;
     }
     [data-testid="stAppViewContainer"] {
         padding: 0;
         margin: 0;
         width: 100%;
-        height: 100vh; /* Full height of the viewport */
+        height: 100vh;
         display: flex;
-        flex-direction: column; /* Stack components vertically */
+        flex-direction: column;
     }
-    /* Layout for the horizontal block (two columns) */
     div[data-testid="stHorizontalBlock"] {
         margin: 0;
         padding: 0;
         width: 100%;
-        height: calc(100vh - 80px); /* Subtract height for header, if any */
-        display: flex; /* Arrange columns horizontally */
-        flex-direction: row; /* Side-by-side layout */
+        height: calc(100vh - 80px);
+        display: flex;
+        flex-direction: row;
     }
-    /* Styling for individual columns */
     div[data-testid="stHorizontalBlock"] > div:nth-child(1),
     div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
-        flex: 1; /* Ensure equal width for both columns */
-        height: 100%; /* Full height of the parent container */
-        overflow-y: auto; /* Enable independent vertical scrolling */
+        flex: 1;
+        height: 100%;
+        overflow-y: auto;
         padding: 10px;
         box-sizing: border-box;
         border: 1px solid #ccc;
@@ -73,9 +71,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # -----------------------------------------------------------------------------
-# Title (Outside of the bordered, scrollable divs)
+# Title
 # -----------------------------------------------------------------------------
 st.markdown(
     "<h1 style='text-align: center; margin: 10px 0;'>🔬 AI Prompt Refinement</h1>",
@@ -86,12 +83,8 @@ st.markdown(
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Create two main columns for the layout
     col_left, col_right = st.columns([2, 3])
-    
-    # -----------------------
-    # Left Column: Inputs & Filters
-    # -----------------------
+
     with col_left:
         st.markdown(
             """
@@ -103,6 +96,9 @@ def main():
             """
         )
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120, key="naive_prompt")
+
+        uploaded_images = st.file_uploader("Upload Images", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+        uploaded_documents = st.file_uploader("Upload Documents", type=["pdf", "docx", "txt"], accept_multiple_files=True)
 
         if st.button("Generate Custom Filters", key="gen_custom_filters"):
             if not naive_prompt.strip():
@@ -138,10 +134,7 @@ def main():
                     refined = refine_prompt_with_google_genai(naive_prompt, filters_all)
                     st.session_state["refined_prompt"] = refined
                     st.success("Prompt refined successfully!")
-    
-    # -----------------------
-    # Right Column: Refined Prompt & Final Response
-    # -----------------------
+
     with col_right:
         refined_text = st.session_state.get("refined_prompt", "")
         if refined_text:
@@ -167,7 +160,6 @@ def main():
                                 gpt_response = generate_response_from_chatgpt(final_prompt)
                                 success = True
                             except Exception as e:
-                                # Retry if error message contains "502"
                                 if "502" in str(e):
                                     retries += 1
                                     time.sleep(2)
@@ -176,12 +168,30 @@ def main():
                                     break
                         if success:
                             st.markdown("### 💬 Response")
-                            st.markdown(gpt_response)  # Render the response directly as Markdown
+                            st.markdown(gpt_response)
                         else:
                             st.error("Failed to generate response after multiple attempts.")
- 
         else:
             st.info("Your refined prompt will appear here once generated.")
+
+        if uploaded_images:
+            st.markdown("### 🖼️ Uploaded Images")
+            for img_file in uploaded_images:
+                img = Image.open(img_file)
+                st.image(img, caption=img_file.name)
+
+        if uploaded_documents:
+            st.markdown("### 📄 Uploaded Documents")
+            for doc_file in uploaded_documents:
+                st.write(f"**{doc_file.name}**")
+                if doc_file.type == "application/pdf":
+                    pdf_reader = PyPDF2.PdfReader(doc_file)
+                    for page in pdf_reader.pages:
+                        st.text(page.extract_text())
+                elif doc_file.type == "text/plain":
+                    st.text(doc_file.read().decode("utf-8"))
+                else:
+                    st.write("Preview not supported for this file type.")
 
 # -----------------------------------------------------------------------------
 # Entry Point
