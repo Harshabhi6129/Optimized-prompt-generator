@@ -127,10 +127,10 @@ st.markdown(
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Initialize chat_history if it doesn't exist
+    # Ensure chat_history exists in session_state
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
-
+    
     col_left, col_right = st.columns([2, 3])
     
     # -----------------------
@@ -148,13 +148,13 @@ def main():
             """
         )
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120, key="naive_prompt")
-
+        
         st.markdown("### 📤 Upload Files")
         uploaded_images = st.file_uploader("Upload Images", type=["png", "jpg", "jpeg"], accept_multiple_files=True, key="image_upload")
         uploaded_documents = st.file_uploader("Upload Documents", type=["pdf", "docx", "txt"], accept_multiple_files=True, key="document_upload")
-
+        
         extracted_text = ""
-
+        
         # Extract text from images
         if uploaded_images:
             st.markdown("### 🖼️ Extracted Text from Images")
@@ -163,7 +163,7 @@ def main():
                 text = pytesseract.image_to_string(img)
                 extracted_text += text + "\n"
                 st.text_area(f"Text from {img_file.name}", text, height=100)
-
+        
         # Extract text from documents
         if uploaded_documents:
             st.markdown("### 📄 Extracted Text from Documents")
@@ -183,10 +183,10 @@ def main():
                     doc_text = "Preview not supported for this file type."
                 extracted_text += doc_text + "\n"
                 st.text_area(f"Text from {doc_file.name}", doc_text, height=100)
-
+        
         # Combine naive prompt and extracted text
         combined_prompt = naive_prompt + "\n" + extracted_text
-
+        
         if st.button("Generate Custom Filters", key="gen_custom_filters"):
             if not combined_prompt.strip():
                 st.error("Please enter a valid naive prompt or upload content.")
@@ -195,7 +195,7 @@ def main():
                     filters_data = generate_dynamic_filters(combined_prompt)
                     st.session_state["custom_filters_data"] = filters_data
                     st.success("Custom filters generated successfully!")
-
+        
         if st.button("Refine Prompt Directly", key="refine_directly"):
             if not combined_prompt.strip():
                 st.error("Please enter a valid naive prompt or upload content.")
@@ -204,14 +204,14 @@ def main():
                     refined = refine_prompt_with_google_genai(combined_prompt, {})
                     st.session_state["refined_prompt"] = refined
                     st.success("Prompt refined successfully!")
-
+        
         default_filters = get_default_filters()
-
+        
         custom_choices = {}
         if "custom_filters_data" in st.session_state:
             custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
             custom_choices = display_custom_filters(custom_definitions)
-
+        
         if st.button("Refine Prompt with Filters", key="refine_with_filters"):
             if not combined_prompt.strip():
                 st.error("Please enter a valid naive prompt or upload content.")
@@ -221,18 +221,18 @@ def main():
                     refined = refine_prompt_with_google_genai(combined_prompt, filters_all)
                     st.session_state["refined_prompt"] = refined
                     st.success("Prompt refined successfully!")
-
+    
     # -----------------------
     # Right Column: Chat Interface
     # -----------------------
     with col_right:
-        # If a refined prompt exists, add it to chat history as a user message
-        refined_text = st.session_state.get("refined_prompt", "")
-        if refined_text:
-            if not st.session_state.chat_history or st.session_state.chat_history[-1]["content"] != refined_text:
-                st.session_state.chat_history.append({"role": "user", "content": refined_text})
-
         st.markdown("### 💬 Chat Interface")
+        
+        # Instead of auto-appending the refined prompt to chat history,
+        # pre-populate the chat input with the refined prompt (if available and input is empty).
+        refined_text = st.session_state.get("refined_prompt", "")
+        if refined_text and (not st.session_state.get("chat_input", "")):
+            st.session_state["chat_input"] = refined_text
         
         # Chat container: build HTML from chat history
         chat_container = st.empty()
@@ -244,7 +244,7 @@ def main():
                 chat_html += f"<div class='ai-message'>{message['content']}</div>"
         chat_container.markdown(chat_html, unsafe_allow_html=True)
         
-        # Function to send a chat message and update chat history
+        # Function to send a chat message and update chat history immediately
         def send_message():
             if st.session_state.chat_input.strip():
                 st.session_state.chat_history.append({
