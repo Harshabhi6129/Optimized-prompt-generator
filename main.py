@@ -125,7 +125,10 @@ st.markdown(
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Create two main columns for the layout
+    # Ensure chat_history exists in session_state
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = []
+
     col_left, col_right = st.columns([2, 3])
     
     # -----------------------
@@ -186,25 +189,22 @@ def main():
         # If a refined prompt exists, add it to the chat history as a user message
         refined_text = st.session_state.get("refined_prompt", "")
         if refined_text:
-            # Add refined prompt to chat history if not already the last message
-            if not st.session_state.get("chat_history"):
-                st.session_state.chat_history = []
             if not st.session_state.chat_history or st.session_state.chat_history[-1]["content"] != refined_text:
                 st.session_state.chat_history.append({"role": "user", "content": refined_text})
         
         st.markdown("### 💬 Chat Interface")
         
-        # Chat container (using st.empty to update immediately)
+        # Chat container: build chat HTML from chat history
         chat_container = st.empty()
         chat_html = ""
         for message in st.session_state.chat_history:
-            if message['role'] == 'user':
+            if message["role"] == "user":
                 chat_html += f"<div class='user-message'>{message['content']}</div>"
             else:
                 chat_html += f"<div class='ai-message'>{message['content']}</div>"
         chat_container.markdown(chat_html, unsafe_allow_html=True)
         
-        # Define a function to send message and immediately refresh
+        # Function to send message and refresh chat immediately
         def send_message():
             if st.session_state.chat_input.strip():
                 st.session_state.chat_history.append({"role": "user", "content": st.session_state.chat_input})
