@@ -9,6 +9,8 @@ from gpt4o_response import generate_response_from_chatgpt
 from model_loader import configure_genai
 from PIL import Image
 import PyPDF2
+import pytesseract
+from docx import Document
 
 # -----------------------------------------------------------------------------
 # Streamlit Setup
@@ -66,6 +68,12 @@ st.markdown(
         border-radius: 10px;
         margin: 0;
     }
+    .file-upload-button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 24px;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -90,31 +98,68 @@ def main():
             """
             **Instructions:**  
             1. Enter a naive prompt below.  
-            2. Click **Generate Custom Filters** or **Refine Prompt Directly**.  
-            3. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
-            4. The refined prompt and the final output will appear on the right side.
+            2. Upload images and documents to analyze.  
+            3. Click **Generate Custom Filters** or **Refine Prompt Directly**.  
+            4. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
+            5. The refined prompt and the final output will appear on the right side.
             """
         )
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120, key="naive_prompt")
 
-        uploaded_images = st.file_uploader("Upload Images", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-        uploaded_documents = st.file_uploader("Upload Documents", type=["pdf", "docx", "txt"], accept_multiple_files=True)
+        st.markdown("### 📤 Upload Files")
+        uploaded_images = st.file_uploader("", type=["png", "jpg", "jpeg"], accept_multiple_files=True, key="image_upload")
+        uploaded_documents = st.file_uploader("", type=["pdf", "docx", "txt"], accept_multiple_files=True, key="document_upload")
+
+        extracted_text = ""
+
+        # Extract text from images
+        if uploaded_images:
+            st.markdown("### 🖼️ Extracted Text from Images")
+            for img_file in uploaded_images:
+                img = Image.open(img_file)
+                text = pytesseract.image_to_string(img)
+                extracted_text += text + "\n"
+                st.text_area(f"Text from {img_file.name}", text, height=100)
+
+        # Extract text from documents
+        if uploaded_documents:
+            st.markdown("### 📄 Extracted Text from Documents")
+            for doc_file in uploaded_documents:
+                doc_text = ""
+                if doc_file.type == "application/pdf":
+                    pdf_reader = PyPDF2.PdfReader(doc_file)
+                    for page in pdf_reader.pages:
+                        doc_text += page.extract_text() + "\n"
+                elif doc_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                    doc = Document(doc_file)
+                    for para in doc.paragraphs:
+                        doc_text += para.text + "\n"
+                elif doc_file.type == "text/plain":
+                    doc_text = doc_file.read().decode("utf-8")
+                else:
+                    doc_text = "Preview not supported for this file type."
+
+                extracted_text += doc_text + "\n"
+                st.text_area(f"Text from {doc_file.name}", doc_text, height=100)
+
+        # Combine user prompt with extracted text for custom filter generation
+        combined_prompt = naive_prompt + "\n" + extracted_text
 
         if st.button("Generate Custom Filters", key="gen_custom_filters"):
-            if not naive_prompt.strip():
-                st.error("Please enter a valid naive prompt.")
+            if not combined_prompt.strip():
+                st.error("Please enter a valid naive prompt or upload content.")
             else:
-                with st.spinner("Analyzing your prompt to generate high-quality custom filters..."):
-                    filters_data = generate_dynamic_filters(naive_prompt)
+                with st.spinner("Analyzing your prompt and uploaded content to generate high-quality custom filters..."):
+                    filters_data = generate_dynamic_filters(combined_prompt)
                     st.session_state["custom_filters_data"] = filters_data
                     st.success("Custom filters generated successfully!")
 
         if st.button("Refine Prompt Directly", key="refine_directly"):
-            if not naive_prompt.strip():
-                st.error("Please enter a valid naive prompt.")
+            if not combined_prompt.strip():
+                st.error("Please enter a valid naive prompt or upload content.")
             else:
-                with st.spinner("Refining your prompt..."):
-                    refined = refine_prompt_with_google_genai(naive_prompt, {})
+                with st.spinner("Refining your prompt and uploaded content..."):
+                    refined = refine_prompt_with_google_genai(combined_prompt, {})
                     st.session_state["refined_prompt"] = refined
                     st.success("Prompt refined successfully!")
 
@@ -126,12 +171,12 @@ def main():
             custom_choices = display_custom_filters(custom_definitions)
 
         if st.button("Refine Prompt with Filters", key="refine_with_filters"):
-            if not naive_prompt.strip():
-                st.error("Please enter a valid naive prompt.")
+            if not combined_prompt.strip():
+                st.error("Please enter a valid naive prompt or upload content.")
             else:
                 filters_all = {"Default": default_filters, "Custom": custom_choices}
-                with st.spinner("Refining your prompt using your preferences..."):
-                    refined = refine_prompt_with_google_genai(naive_prompt, filters_all)
+                with st.spinner("Refining your prompt using your preferences and uploaded content..."):
+                    refined = refine_prompt_with_google_genai(combined_prompt, filters_all)
                     st.session_state["refined_prompt"] = refined
                     st.success("Prompt refined successfully!")
 
@@ -173,25 +218,6 @@ def main():
                             st.error("Failed to generate response after multiple attempts.")
         else:
             st.info("Your refined prompt will appear here once generated.")
-
-        if uploaded_images:
-            st.markdown("### 🖼️ Uploaded Images")
-            for img_file in uploaded_images:
-                img = Image.open(img_file)
-                st.image(img, caption=img_file.name)
-
-        if uploaded_documents:
-            st.markdown("### 📄 Uploaded Documents")
-            for doc_file in uploaded_documents:
-                st.write(f"**{doc_file.name}**")
-                if doc_file.type == "application/pdf":
-                    pdf_reader = PyPDF2.PdfReader(doc_file)
-                    for page in pdf_reader.pages:
-                        st.text(page.extract_text())
-                elif doc_file.type == "text/plain":
-                    st.text(doc_file.read().decode("utf-8"))
-                else:
-                    st.write("Preview not supported for this file type.")
 
 # -----------------------------------------------------------------------------
 # Entry Point
