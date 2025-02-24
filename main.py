@@ -23,9 +23,9 @@ openai_api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
 google_genai_key = st.secrets.get("GOOGLE_GENAI_API_KEY", os.getenv("GOOGLE_GENAI_API_KEY"))
 
 if openai_api_key:
-openai.api_key = openai_api_key
+   openai.api_key = openai_api_key
 else:
-st.error("OpenAI API key not provided. Please set OPENAI_API_KEY in your secrets or environment variables.")
+   st.error("OpenAI API key not provided. Please set OPENAI_API_KEY in your secrets or environment variables.")
 
 configure_genai(openai_api_key, google_genai_key)
 
