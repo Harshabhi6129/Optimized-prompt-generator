@@ -204,22 +204,38 @@ def main():
                 chat_html += f"<div class='ai-message'>{message['content']}</div>"
         chat_container.markdown(chat_html, unsafe_allow_html=True)
         
-        # Function to send message and refresh chat immediately
+        # Function to send message and update chat immediately
         def send_message():
             if st.session_state.chat_input.strip():
-                st.session_state.chat_history.append({"role": "user", "content": st.session_state.chat_input})
+                st.session_state.chat_history.append({
+                    "role": "user",
+                    "content": st.session_state.chat_input
+                })
                 try:
                     gpt_response = generate_response_from_chatgpt(st.session_state.chat_input)
-                    st.session_state.chat_history.append({"role": "ai", "content": gpt_response})
+                    st.session_state.chat_history.append({
+                        "role": "ai",
+                        "content": gpt_response
+                    })
                 except Exception as e:
-                    st.session_state.chat_history.append({"role": "ai", "content": f"Error: {e}"})
+                    st.session_state.chat_history.append({
+                        "role": "ai",
+                        "content": f"Error: {e}"
+                    })
                 st.session_state.chat_input = ""
-                st.experimental_rerun()
         
-        # Chat input at the bottom with a "Send" button
-        user_input = st.text_input("Type your message...", key="chat_input")
-        if st.button("Send", key="chat_send"):
-            send_message()
+        # Chat input at the bottom with a "Send" button using on_click callback
+        st.text_input("Type your message...", key="chat_input")
+        st.button("Send", on_click=send_message, key="chat_send")
+        
+        # Display updated chat container after sending message
+        updated_chat_html = ""
+        for message in st.session_state.chat_history:
+            if message["role"] == "user":
+                updated_chat_html += f"<div class='user-message'>{message['content']}</div>"
+            else:
+                updated_chat_html += f"<div class='ai-message'>{message['content']}</div>"
+        chat_container.markdown(updated_chat_html, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # Entry Point
