@@ -57,8 +57,7 @@ st.markdown(
         display: flex;
         flex-direction: row;
     }
-    div[data-testid="stHorizontalBlock"] > div:nth-child(1),
-    div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+    div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
         flex: 1;
         height: 100%;
         overflow-y: auto;
@@ -68,11 +67,52 @@ st.markdown(
         border-radius: 10px;
         margin: 0;
     }
-    .file-upload-button {
-        background-color: transparent;
-        border: none;
-        cursor: pointer;
-        font-size: 24px;
+    div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+        flex: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        margin: 0;
+    }
+    .chat-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #ccc;
+    }
+    .user-message {
+        background-color: #DCF8C6;
+        padding: 8px 12px;
+        border-radius: 10px;
+        margin: 5px 0;
+        align-self: flex-end;
+        max-width: 80%;
+    }
+    .ai-message {
+        background-color: #FFFFFF;
+        padding: 8px 12px;
+        border-radius: 10px;
+        margin: 5px 0;
+        align-self: flex-start;
+        max-width: 80%;
+        border: 1px solid #ccc;
+    }
+    .chat-input {
+        display: flex;
+        padding: 10px;
+        background-color: #fff;
+    }
+    .chat-input textarea {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    .chat-input button {
+        margin-left: 10px;
     }
     </style>
     """,
@@ -91,8 +131,14 @@ st.markdown(
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
+
     col_left, col_right = st.columns([2, 3])
 
+    # -----------------------
+    # Left Column: Prompt Refinement
+    # -----------------------
     with col_left:
         st.markdown(
             """
@@ -101,7 +147,6 @@ def main():
             2. Upload images and documents to analyze.  
             3. Click **Generate Custom Filters** or **Refine Prompt Directly**.  
             4. Adjust the **Default Filters** and fill out the **Custom Filters** if needed.  
-            5. The refined prompt and the final output will appear on the right side.
             """
         )
         naive_prompt = st.text_area("Enter Your Naive Prompt:", "", height=120, key="naive_prompt")
@@ -163,61 +208,36 @@ def main():
                     st.session_state["refined_prompt"] = refined
                     st.success("Prompt refined successfully!")
 
-        default_filters = get_default_filters()
-
-        custom_choices = {}
-        if "custom_filters_data" in st.session_state:
-            custom_definitions = st.session_state["custom_filters_data"].get("custom_filters", [])
-            custom_choices = display_custom_filters(custom_definitions)
-
-        if st.button("Refine Prompt with Filters", key="refine_with_filters"):
-            if not combined_prompt.strip():
-                st.error("Please enter a valid naive prompt or upload content.")
-            else:
-                filters_all = {"Default": default_filters, "Custom": custom_choices}
-                with st.spinner("Refining your prompt using your preferences and uploaded content..."):
-                    refined = refine_prompt_with_google_genai(combined_prompt, filters_all)
-                    st.session_state["refined_prompt"] = refined
-                    st.success("Prompt refined successfully!")
-
+    # -----------------------
+    # Right Column: Chat Interface
+    # -----------------------
     with col_right:
-        refined_text = st.session_state.get("refined_prompt", "")
-        if refined_text:
-            st.markdown("### 📌 Editable Refined Prompt")
-            editable_prompt = st.text_area(
-                "Refined Prompt (Editable)",
-                refined_text,
-                height=120,
-                key="editable_refined_prompt"
-            )
-            st.session_state["refined_prompt"] = editable_prompt
+        st.markdown("### 💬 Chat Interface")
 
-            if st.button("Submit", key="submit_final"):
-                final_prompt = st.session_state.get("refined_prompt", "").strip()
-                if not final_prompt:
-                    st.error("Refined prompt is empty. Please refine the prompt before submitting.")
+        # Chat container
+        chat_container = st.container()
+        with chat_container:
+            for message in st.session_state.chat_history:
+                if message['role'] == 'user':
+                    st.markdown(f"<div class='user-message'>{message['content']}</div>", unsafe_allow_html=True)
                 else:
-                    with st.spinner("Generating final response..."):
-                        retries = 0
-                        success = False
-                        while retries < 3 and not success:
-                            try:
-                                gpt_response = generate_response_from_chatgpt(final_prompt)
-                                success = True
-                            except Exception as e:
-                                if "502" in str(e):
-                                    retries += 1
-                                    time.sleep(2)
-                                else:
-                                    st.error(f"Error generating response: {e}")
-                                    break
-                        if success:
-                            st.markdown("### 💬 Response")
-                            st.markdown(gpt_response)
-                        else:
-                            st.error("Failed to generate response after multiple attempts.")
-        else:
-            st.info("Your refined prompt will appear here once generated.")
+                    st.markdown(f"<div class='ai-message'>{message['content']}</div>", unsafe_allow_html=True)
+
+        # Chat input at the bottom
+        with st.container():
+            user_input = st.text_input("Type your message...", key="chat_input")
+            if st.button("Send"):
+                if user_input.strip():
+                    # Append user message
+                    st.session_state.chat_history.append({"role": "user", "content": user_input})
+
+                    # Generate AI response
+                    with st.spinner("Generating response..."):
+                        try:
+                            gpt_response = generate_response_from_chatgpt(user_input)
+                            st.session_state.chat_history.append({"role": "ai", "content": gpt_response})
+                        except Exception as e:
+                            st.session_state.chat_history.append({"role": "ai", "content": f"Error: {e}"})
 
 # -----------------------------------------------------------------------------
 # Entry Point
