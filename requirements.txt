@@ -8,3 +8,4 @@ altair==5.5.0
 Markdown==3.4.1
 PyPDF2
 pytesseract
+docx
