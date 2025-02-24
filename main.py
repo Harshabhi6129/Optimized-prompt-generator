@@ -127,7 +127,7 @@ st.markdown(
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Ensure chat_history exists in session_state
+    # Initialize chat_history if not present
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
     
@@ -228,10 +228,9 @@ def main():
     with col_right:
         st.markdown("### 💬 Chat Interface")
         
-        # Instead of auto-appending the refined prompt to chat history,
-        # pre-populate the chat input with the refined prompt (if available and input is empty).
+        # Pre-populate chat input with the refined prompt, if available, but do not auto-send it.
         refined_text = st.session_state.get("refined_prompt", "")
-        if refined_text and (not st.session_state.get("chat_input", "")):
+        if refined_text and not st.session_state.get("chat_input"):
             st.session_state["chat_input"] = refined_text
         
         # Chat container: build HTML from chat history
@@ -263,6 +262,7 @@ def main():
                         "content": f"Error: {e}"
                     })
                 st.session_state.chat_input = ""
+                st.experimental_rerun()
         
         # Chat input and "Send" button (using on_click callback for immediate update)
         st.text_input("Type your message...", key="chat_input")
