@@ -12,6 +12,11 @@ import PyPDF2
 import pytesseract
 from docx import Document
 
+# Set the path to the Tesseract executable (adjust as needed for your system)
+pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'  # For Linux
+# For Windows, you might use:
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
 # -----------------------------------------------------------------------------
 # Streamlit Setup
 # -----------------------------------------------------------------------------
@@ -127,7 +132,7 @@ st.markdown(
 # Main Function
 # -----------------------------------------------------------------------------
 def main():
-    # Ensure chat_history exists in session_state
+    # Initialize chat_history if not present
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
     
@@ -246,12 +251,10 @@ def main():
         # Function to send a chat message and update chat history
         def send_message():
             if st.session_state.chat_input.strip():
-                # 1) Append user message
                 st.session_state.chat_history.append({
                     "role": "user",
                     "content": st.session_state.chat_input
                 })
-                # 2) Generate AI response
                 try:
                     gpt_response = generate_response_from_chatgpt(st.session_state.chat_input)
                     st.session_state.chat_history.append({
@@ -263,10 +266,10 @@ def main():
                         "role": "ai",
                         "content": f"Error: {e}"
                     })
-                # 3) Clear the text box (no st.experimental_rerun needed)
+                # Clear the chat input
                 st.session_state.chat_input = ""
         
-        # Chat input and "Send" button (no st.experimental_rerun to avoid warnings)
+        # Chat input and "Send" button (using on_click callback for immediate update)
         st.text_input("Type your message...", key="chat_input")
         st.button("Send", on_click=send_message, key="chat_send")
         
