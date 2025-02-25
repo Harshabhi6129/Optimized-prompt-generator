@@ -75,20 +75,23 @@ def generate_dynamic_filters(naive_prompt: str) -> dict:
     """
     Uses the Gemini Pro model to generate custom filters that capture maximum insight 
     into what the user wants based on their naive prompt. The returned JSON will include:
-      - Exactly one free–form text input filter for the user to describe requirements
-      - Additional filters as options (radio, checkbox, or selectbox) for structured responses.
+      - Exactly one free-form text input filter for the user to describe requirements in their own words.
+      - Additional filters as options (radio, checkbox, or selectbox) for structured responses,
+        strictly relevant to the user's content or domain needs.
     """
     system_instruction = """
 IMPORTANT: Output must be strictly valid JSON with no extra text, markdown, or explanations.
 
 Task:
 You are an expert in extracting user requirements for optimal prompt design. Analyze the following input prompt and generate a set of highly relevant custom filters that will capture maximum insight into what the user wants. The requirements are as follows:
-- There must be exactly one free-form text input filter for the user to describe their requirements in their own words. Label it clearly (for example, "Describe your requirements:").
-- All additional filters must be option-based (using types "radio", "checkbox", or "selectbox") to help the user select specific details.
-- The filters should capture details such as the specific goal or outcome desired, tone, style, audience preferences, level of detail, technical constraints, and any domain-specific information.
-- Ensure every filter has a unique key and is user-friendly.
 
-Return a JSON object exactly in the following structure:
+- Return strictly relevant filters based on the user's prompt content, avoiding generic or redundant filters that duplicate existing defaults (e.g., tone, style, output detail).
+- Include exactly one free-form text input filter labeled "Describe your requirements:". 
+- Additional filters must be option-based (radio, checkbox, or selectbox) and focus on the user’s domain-specific details or advanced preferences not covered in the default filters.
+- Each filter must have a unique 'key' and be user-friendly.
+- Only include filters that truly add value or capture more nuanced requirements from the user's prompt.
+
+Return a JSON object in the following structure:
 {
   "custom_filters": [
     {
@@ -96,22 +99,17 @@ Return a JSON object exactly in the following structure:
       "label": "Describe your requirements:",
       "key": "custom_free_text"
     },
-    {
-      "type": "radio",
-      "label": "Your question here",
-      "key": "unique_key_here",
-      "options": ["Option1", "Option2"]
-    }
-    // Additional filters as needed
+    // Additional relevant filters as needed
   ]
 }
 """
+
     full_prompt = f"{system_instruction}\n\nInput Prompt:\n{naive_prompt}"
     model = load_gemini_pro("gemini-1.5-flash")
     if not model:
         st.error("Gemini Pro model not loaded successfully.")
         return {"custom_filters": []}
-    
+
     attempts = 3
     for attempt in range(attempts):
         try:
@@ -124,13 +122,16 @@ Return a JSON object exactly in the following structure:
             if json_match:
                 text_output = json_match.group(0)
             parsed_output = json.loads(text_output)
+
             if "custom_filters" not in parsed_output:
                 raise ValueError("Missing 'custom_filters' key in the output.")
             # Validate each filter definition contains required keys
             for filt in parsed_output["custom_filters"]:
                 if "type" not in filt or "label" not in filt or "key" not in filt:
                     raise ValueError("A filter is missing one or more required keys.")
+
             return parsed_output
+
         except Exception as e:
             logger.error(f"JSON Parsing Error on attempt {attempt+1}: {e}")
 
@@ -157,6 +158,7 @@ Return a JSON object exactly in the following structure:
         ]
     }
     return fallback_filters
+
 
 # -----------------------------------------------------------------------------
 # Display Custom Filters
