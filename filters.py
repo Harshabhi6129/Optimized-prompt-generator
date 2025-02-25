@@ -75,7 +75,7 @@ def generate_dynamic_filters(naive_prompt: str) -> dict:
     """
     Uses the Gemini Pro model to generate custom filters that capture maximum insight 
     into what the user wants based on their naive prompt. The returned JSON will include:
-      - Exactly one free-form text input filter for user requirements.
+      - Exactly one free-form text input filter for the user to describe requirements.
       - Additional filters (radio, checkbox, or selectbox) relevant to the user’s domain,
         without duplicating default filters (tone, style, etc.).
     """
@@ -177,7 +177,7 @@ def display_custom_filters(custom_filters: list) -> dict:
     for filt in custom_filters:
         f_type = filt.get("type")
         if f_type == "text_input":
-            # Use the first text_input as the free-form entry.
+            # Use the first text_input as the free-form entry
             if free_text_filter is None:
                 free_text_filter = filt
             else:
@@ -195,31 +195,66 @@ def display_custom_filters(custom_filters: list) -> dict:
 
         with st.expander(f"Filter: {f_label}", expanded=False):
             if f_type == "checkbox":
+                # If no options, treat as a single checkbox
                 if not f_options:
-                    # Single checkbox
-                    user_custom_choices[f_key] = st.checkbox(str(f_label), key=f_key)
+                    user_custom_choices[f_key] = st.checkbox(f_label, key=f_key)
                 else:
                     # Multiple selectable checkboxes
                     chosen = []
                     for opt in f_options:
-                        # Convert to str, handle big or non-string
-                        opt_str = str(opt)[:100]  # Truncate at 100 chars if needed
-                        if st.checkbox(opt_str, key=f"{f_key}_{opt_str}"):
-                            chosen.append(opt_str)
+                        # 1) If it's dict with "label"/"value", show label, store value
+                        if isinstance(opt, dict) and "label" in opt and "value" in opt:
+                            display_label = str(opt["label"])[:100]
+                            stored_value = opt["value"]
+                        else:
+                            display_label = str(opt)[:100]
+                            stored_value = display_label
+                        if st.checkbox(display_label, key=f"{f_key}_{display_label}"):
+                            chosen.append(stored_value)
                     user_custom_choices[f_key] = chosen
 
             elif f_type == "radio":
-                # Convert each option to string
-                options_str = [str(o)[:100] for o in f_options]  # Truncate if large
-                user_custom_choices[f_key] = st.radio(f_label, options=options_str, key=f_key)
+                display_labels = []
+                stored_values = []
+                for opt in f_options:
+                    if isinstance(opt, dict) and "label" in opt and "value" in opt:
+                        display_label = str(opt["label"])[:100]
+                        stored_value = opt["value"]
+                    else:
+                        display_label = str(opt)[:100]
+                        stored_value = display_label
+                    display_labels.append(display_label)
+                    stored_values.append(stored_value)
+
+                selected_label = st.radio(f_label, options=display_labels, key=f_key)
+                # Map selected label back to the stored value
+                user_custom_choices[f_key] = None
+                if selected_label in display_labels:
+                    idx = display_labels.index(selected_label)
+                    user_custom_choices[f_key] = stored_values[idx]
 
             elif f_type == "selectbox":
-                options_str = [str(o)[:100] for o in f_options]
-                user_custom_choices[f_key] = st.selectbox(f_label, options=options_str, key=f_key)
+                display_labels = []
+                stored_values = []
+                for opt in f_options:
+                    if isinstance(opt, dict) and "label" in opt and "value" in opt:
+                        display_label = str(opt["label"])[:100]
+                        stored_value = opt["value"]
+                    else:
+                        display_label = str(opt)[:100]
+                        stored_value = display_label
+                    display_labels.append(display_label)
+                    stored_values.append(stored_value)
+
+                selected_label = st.selectbox(f_label, options=display_labels, key=f_key)
+                user_custom_choices[f_key] = None
+                if selected_label in display_labels:
+                    idx = display_labels.index(selected_label)
+                    user_custom_choices[f_key] = stored_values[idx]
 
             elif f_type == "text_input":
                 # If a filter is text_input but not the designated free_text_filter,
-                # display it as a normal text_input.
+                # display it as a normal text_input
                 user_custom_choices[f_key] = st.text_input(f_label, key=f_key)
 
     # Ensure we have at least one free-form text filter
