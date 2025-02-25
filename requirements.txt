@@ -9,4 +9,4 @@ Markdown==3.4.1
 PyPDF2
 pytesseract>=0.3.10
 python-docx>=0.8.11
-tesseract-ocr
+
