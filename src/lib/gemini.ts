@@ -1,18 +1,48 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CustomFiltersResponse } from "@/types";
 
-const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+const apiKeys = [
+  process.env.GOOGLE_GEMINI_API_KEY_1,
+  process.env.GOOGLE_GEMINI_API_KEY_2,
+  process.env.GOOGLE_GEMINI_API_KEY_3,
+  process.env.GOOGLE_GEMINI_API_KEY_4,
+].filter((key): key is string => !!key && key.length > 0);
 
-if (!apiKey) {
-  console.error("[FATAL] GOOGLE_GEMINI_API_KEY is not set!");
-  console.error("[FATAL] Available env vars:", Object.keys(process.env).filter(k => k.includes('GEMINI')));
-  throw new Error("GOOGLE_GEMINI_API_KEY is not set in environment variables");
+if (apiKeys.length === 0) {
+  // Fallback to legacy single key if present
+  if (process.env.GOOGLE_GEMINI_API_KEY) {
+    apiKeys.push(process.env.GOOGLE_GEMINI_API_KEY);
+  } else {
+    console.error("[FATAL] No GOOGLE_GEMINI_API_KEYS found!");
+    throw new Error("No Gemini API keys provided in environment variables");
+  }
 }
 
-console.log("[INIT] Gemini API initialized");
-console.log("[INIT] API Key loaded (first 10 chars):", apiKey.substring(0, 10));
+console.log(`[INIT] Loaded ${apiKeys.length} Gemini API keys for rotation.`);
 
-const genAI = new GoogleGenerativeAI(apiKey);
+/**
+ * Get a random API key to distribute load
+ */
+function getRandomApiKey(): string {
+  const randomIndex = Math.floor(Math.random() * apiKeys.length);
+  const key = apiKeys[randomIndex];
+  // Log masked key for debugging
+  console.log(`[ROTATION] Using API Key #${randomIndex + 1} (...${key.substring(0, 5)}...)`);
+  return key;
+}
+
+/**
+ * Helper to get a configured model instance with a random key
+ */
+function getModel(modelName: string = "gemini-pro", config?: any) {
+  const key = getRandomApiKey();
+  const genAI = new GoogleGenerativeAI(key);
+  return genAI.getGenerativeModel({
+    model: modelName,
+    ...config
+  });
+}
+
 
 const FALLBACK_FILTERS: CustomFiltersResponse = {
   custom_filters: [
@@ -102,8 +132,10 @@ export async function generateCustomFilters(
   
   Return ONLY valid JSON.`;
 
-  const model = genAI.getGenerativeModel({
-    model: "gemini-pro",
+  /* REPLACE: Direct instantiation */
+  /* const model = genAI.getGenerativeModel({...}) */
+
+  const model = getModel("gemini-pro", {
     generationConfig: {
       temperature: 0.9,
       maxOutputTokens: 2048,
@@ -220,8 +252,7 @@ export async function refinePromptWithGemini(
   naivePrompt: string,
   filtersText: string
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-pro",
+  const model = getModel("gemini-pro", {
     systemInstruction: `You are an expert prompt optimizer. Your task is to refine user prompts.
 
 RULES:
@@ -261,8 +292,7 @@ export async function generateChatResponse(
   userMessage: string,
   conversationHistory: Array<{ role: "user" | "model"; content: string }> = []
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-pro",
+  const model = getModel("gemini-pro", {
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 2048,
@@ -302,10 +332,15 @@ export async function generateChatResponse(
  * Test function to verify Gemini API is working
  * Call this from the browser console to debug
  */
+/**
+ * Test function to verify Gemini API is working
+ * Call this from the browser console to debug
+ */
 export async function testGeminiConnection() {
   try {
     console.log("[TEST] Testing Gemini API connection...");
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Use getModel to use a rotated key
+    const model = getModel("gemini-pro");
     const result = await model.generateContent("Say 'Hello, API is working!'");
     const response = await result.response;
     const text = response.text();
@@ -322,8 +357,9 @@ export async function testGeminiConnection() {
  */
 export async function listAvailableModels() {
   try {
+    const key = getRandomApiKey();
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_GEMINI_API_KEY}`
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`
     );
     const data = await response.json();
     console.log("Available models:", data.models?.map((m: any) => m.name));
